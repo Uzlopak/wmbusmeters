@@ -6692,8 +6692,8 @@ function checkIncomingModuleAPI() {
   ignoredModuleProp('onSbrkGrow');
 }
 var ASM_CONSTS = {
-  807772: ($0, $1, $2) => { writeSerial($0, $1, $2); },  
- 807801: ($0) => { if (typeof drainSerialData === 'function') drainSerialData($0); }
+  807708: ($0, $1, $2) => { writeSerial($0, $1, $2); },  
+ 807737: ($0) => { if (typeof drainSerialData === 'function') drainSerialData($0); }
 };
 
 // Imports from the Wasm binary.
