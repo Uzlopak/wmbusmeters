@@ -111,7 +111,6 @@ em++ \
   -s WASM=1 \
   -s MODULARIZE=1 \
   -s ASSERTIONS=1 \
-  -s EXPORT_ES6=1 \
   -s ASYNCIFY \
   -s ASYNCIFY_STACK_SIZE=1048576 \
   -s ASYNCIFY_IMPORTS='["emscripten_sleep", "usleep"]' \
