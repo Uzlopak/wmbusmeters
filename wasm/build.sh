@@ -16,7 +16,7 @@ mkdir -p "$OUT" "$BUILD"
 echo "#define VERSION \"$VERSION\"" > $BUILD/version.h
 echo "#define COMMIT \"$COMMIT\"" >> $BUILD/version.h
 
-CXX_FLAGS="-std=c++17 -O2 -I$SRC -I$BUILD -I$SCRIPT_DIR -I$LIBXML2/include -D__EMSCRIPTEN_BUILD__ -Dexit=wm_exit_trap -include ./usleep_async.h -include $BUILD/version.h"
+CXX_FLAGS="-std=c++20 -Wall -Wextra -O2 -flto -I$SRC -I$BUILD -I$SCRIPT_DIR -I$LIBXML2/include -D__EMSCRIPTEN_BUILD__ -Dexit=wm_exit_trap -include ./usleep_async.h -include $BUILD/version.h"
 
 compile_if_needed() {
     local src="$1"
@@ -47,7 +47,7 @@ fi
 XMQ_OBJ="$BUILD/xmq.o"
 if [ ! -f "$XMQ_OBJ" ] || [ "$SRC/xmq.c" -nt "$XMQ_OBJ" ]; then
     echo "  [compile] xmq.c" >&2
-    emcc -O2 -I"$SRC" -I"$LIBXML2/include" -c "$SRC/xmq.c" -o "$XMQ_OBJ"
+    emcc -O2 -flto  -I"$SRC" -I"$LIBXML2/include" -c "$SRC/xmq.c" -o "$XMQ_OBJ"
 fi
 
 # ── 3. Core + Drivers + wmbus devices + bus ───────────
@@ -107,9 +107,11 @@ echo "==> Linking wmbusmeters WASM..."
 em++ \
   $ALL_OBJS \
   "$LIBXML2_A" \
+  -flto \
   -s WASM=1 \
   -s MODULARIZE=1 \
   -s ASSERTIONS=1 \
+  -s EXPORT_ES6=1 \
   -s ASYNCIFY \
   -s ASYNCIFY_STACK_SIZE=1048576 \
   -s ASYNCIFY_IMPORTS='["emscripten_sleep", "usleep"]' \
@@ -132,6 +134,6 @@ em++ \
 
 echo ""
 
-echo "==> Optimizing with wasm-opt..."
-wasm-opt "$OUT/wmbusmeters.wasm" $WASM_OPT_FLAGS -o "$OUT/wmbusmeters.wasm" 
+# echo "==> Optimizing with wasm-opt..."
+# wasm-opt "$OUT/wmbusmeters.wasm" $WASM_OPT_FLAGS -o "$OUT/wmbusmeters.wasm" 
 echo "==> Done! Output in wasm/dist/"

@@ -116,7 +116,7 @@ void wm_stop()
 // listSerialTTYs() / createSerialDeviceTTY() find it.
 
 EMSCRIPTEN_KEEPALIVE
-const char* wm_serial_open(int idx, int baud)
+const char* wm_serial_open(int idx)
 {
     if (!g_web_serial_manager) {
         g_web_serial_manager = new SerialCommunicationManagerImp();
