@@ -6713,16 +6713,19 @@ function checkIncomingModuleAPI() {
   ignoredModuleProp('onSbrkGrow');
 }
 var ASM_CONSTS = {
-  773408: ($0, $1, $2) => { writeSerial($0, $1, $2); },  
- 773437: () => { return (typeof pendingDisconnects !== 'undefined') ? pendingDisconnects.length : 0; },  
- 773525: ($0) => { return pendingDisconnects[$0]; },  
- 773560: ($0) => { pendingDisconnects.splice(0, $0); },  
- 773598: () => { return (typeof pendingConnects !== 'undefined') ? pendingConnects.length : 0; },  
- 773680: ($0) => { return pendingConnects[$0]; },  
- 773712: ($0) => { pendingConnects.splice(0, $0); },  
- 773747: ($0) => { try { FS.createDevice('/dev', 'ttyUSB' + $0, function() { return null; }, function(c) {} ); } catch(e) { console.warn('[vfs] createDevice /dev/ttyUSB' + $0 + ' failed:', e); } },  
- 773927: ($0) => { try { FS.unlink('/dev/ttyUSB' + $0); } catch(e) {} },  
- 773982: ($0) => { if (typeof drainSerialData === 'function') drainSerialData($0); }
+  773424: ($0, $1, $2, $3, $4) => { if (typeof queueBaudrateChange === 'function') return queueBaudrateChange($0, $1, $2, $3, $4); return 0; },  
+ 773533: ($0) => { return (typeof serialPortReady !== 'undefined' && serialPortReady[$0]) ? 1 : 0; },  
+ 773617: ($0) => { serialPortReady[$0] = false; },  
+ 773650: ($0, $1, $2) => { writeSerial($0, $1, $2); },  
+ 773679: () => { return (typeof pendingDisconnects !== 'undefined') ? pendingDisconnects.length : 0; },  
+ 773767: ($0) => { return pendingDisconnects[$0]; },  
+ 773802: ($0) => { pendingDisconnects.splice(0, $0); },  
+ 773840: () => { return (typeof pendingConnects !== 'undefined') ? pendingConnects.length : 0; },  
+ 773922: ($0) => { return pendingConnects[$0]; },  
+ 773954: ($0) => { pendingConnects.splice(0, $0); },  
+ 773989: ($0) => { try { FS.createDevice('/dev', 'ttyUSB' + $0, function() { return null; }, function(c) {} ); } catch(e) { console.warn('[vfs] createDevice /dev/ttyUSB' + $0 + ' failed:', e); } },  
+ 774169: ($0) => { try { FS.unlink('/dev/ttyUSB' + $0); } catch(e) {} },  
+ 774224: ($0) => { if (typeof drainSerialData === 'function') drainSerialData($0); }
 };
 
 // Imports from the Wasm binary.

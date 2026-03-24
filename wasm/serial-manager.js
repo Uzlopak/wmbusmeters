@@ -12,9 +12,14 @@
 function createDeferredPromise() {
   /** @type {any} */ let res;
   /** @type {any} */ let rej;
-  const promise = new Promise((resolve, reject) => { res = resolve; rej = reject; });
-  return { promise, resolve: res, reject: rej };
+    const promise = new Promise((resolve, reject) => { res = resolve; rej = reject; });
+    return { promise, resolve: res, reject: rej };
 }
+
+const parityMap = /** @type {const} */ ({ 0: 'none', 1: 'even', 2: 'odd' });
+
+/** @typedef {typeof parityMap[keyof parityMap]} Parity */
+
 
 /**
  * @typedef {Object} SerialPort
@@ -23,6 +28,7 @@ function createDeferredPromise() {
  * @property {*} writable
  * @property {*} readable
  * @property {() => { usbVendorId?: number, usbProductId?: number }} getInfo
+ * @property {() => Promise<void>} forget
  */
 
 // ═══════════════════════════════════════════════════════════════
@@ -34,19 +40,29 @@ function createDeferredPromise() {
 class SerialDeviceImp {
     /** @type {SerialPort} */    #port;
     /** @type {number} */        #index;
+
     /** @type {WritableStreamDefaultWriter|null} */ #writer = null;
     /** @type {ReadableStreamDefaultReader|null} */ #reader = null;
+
     /** @type {boolean} */       reading = false;
-    /** @type {any} */           wasmModule = null; // set after WASM init
-    /** @type {Function|null} */ onDataFn = null;   // cwrap'd serial_on_data
-    /** @type {Uint8Array[]} */ pendingData = [];
-    /** @type {Function} */ onDisconnect = (() => {});
-    /** @type {Function} */ onConnect = (() => {});
+    /** @type {any} */           wasmModule = null;
+    /** @type {Function|null} */ onDataFn = null;
+    /** @type {Uint8Array[]} */  pendingData = [];
+
+    /** @type {Function} */ onDisconnect = (() => { });
+    /** @type {Function} */ onConnect = (() => { });
+
     /** @type {number} */ #usbVendorId = 0;
     /** @type {number} */ #usbProductId = 0;
 
     /** @type {Promise<*>|null} */
     #readLoop = null;
+
+    /** @type {boolean} */
+    #closing = false;
+
+    /** @type {Promise<any>} Write-Queue (serialisiert alle Writes) */
+    #writeLock = Promise.resolve();
 
     /** @type {boolean} */
     get isOpen() {
@@ -82,14 +98,20 @@ class SerialDeviceImp {
      * @param {number} baudRate
      * @param {number} dataBits
      * @param {number} stopBits
-     * @param {string} parity
+     * @param {Parity} parity
      */
     async open(baudRate, dataBits = 8, stopBits = 1, parity = 'none') {
         if (this.isOpen) return true;
+
+        // Reset state for fresh session
+        this.#closing = false;
+        this.#writeLock = Promise.resolve();
+
         try {
             await this.#port.open({ baudRate, dataBits, stopBits, parity, flowControl: 'none' });
             this.#writer = this.#port.writable.getWriter();
-            this.#readLoop = this._startReadLoop();
+            this.#readLoop = this.#startReadLoop();
+            console.log(`[serial:${this.#index}] port opened at ${baudRate} baud, parity=${parity}`);
             return true;
         } catch (e) {
             console.error(`[serial:${this.#index}] open failed:`, e);
@@ -99,40 +121,83 @@ class SerialDeviceImp {
 
     /**
      * Close the port.
+     * Called by C++ SerialDeviceImp::close() via EM_ASM → closeSerialPort()
+     * 
+     * @returns {Promise<void>}
      */
     async close() {
+        if (this.#closing) return;
+        this.#closing = true;
+
         this.reading = false;
         this.pendingData = [];
-        try { if (this.#reader) this.#reader.cancel(); } catch (e) {
+
+        // Stop reader
+        try {
+            if (this.#reader) {
+                await this.#reader.cancel();
+            }
+        } catch (e) {
             console.error(`[serial:${this.#index}] reader cancel failed:`, e);
         }
-        try { if (this.#writer) this.#writer.releaseLock(); } catch (e) {
-            console.error(`[serial:${this.#index}] writer release failed:`, e);
+
+        // Wait for all pending writes (prevents "closing stream" error)
+        try {
+            await this.#writeLock;
+        } catch (e) {
+            console.error(`[serial:${this.#index}] write lock failed during close:`, e);
         }
-        await this.#readLoop; // ensure read loop has fully stopped
+
+        // Atomically invalidate writer so no new writes can start
+        const writer = this.#writer;
+        this.#writer = null;
+
+        try {
+            if (writer) {
+                await writer.close();
+                writer.releaseLock();
+            }
+        } catch (e) {
+            console.error(`[serial:${this.#index}] writer close failed:`, e);
+        }
+
+        // Ensure read loop is fully stopped
+        await this.#readLoop;
         this.#readLoop = null;
-        await this.#port.close()
-            .finally(() => {
-                this.#writer = null;
-                this.#reader = null;
-            })
-            .then(() => console.log(`[serial:${this.#index}] port closed.`))
-            .catch(e => console.error(`[serial:${this.#index}] port close failed:`, e));
+
+        try {
+            await this.#port.close()
+            console.log(`[serial:${this.#index}] port closed.`)
+        } catch (e) {
+            console.error(`[serial:${this.#index}] port close failed:`, e);
+        }
+
+        this.#reader = null;
+        this.#closing = false;
     }
 
     /**
      * Send raw bytes. Called by C++ via EM_ASM → writeSerial(index, ptr, len)
      * @param {Uint8Array} data
+     * @returns {Promise<boolean>} true if write succeeded, false if failed or port is closing/closed
      */
     async send(data) {
-        if (!this.#writer || !this.isOpen) return false;
-        try {
-            await this.#writer.write(data);
-            return true;
-        } catch (e) {
-            console.error(`[serial:${this.#index}] write error:`, e);
-            return false;
-        }
+        if (this.#closing || !this.#writer) return false;
+
+        // Chain writes → guarantees FIFO + no race with close()
+        this.#writeLock = this.#writeLock.then(async () => {
+            if (this.#closing || !this.#writer) return false;
+
+            try {
+                await this.#writer.write(data);
+                return true;
+            } catch (e) {
+                console.error(`[serial:${this.#index}] write error:`, e);
+                return false;
+            }
+        });
+
+        return this.#writeLock;
     }
 
     /**
@@ -140,8 +205,9 @@ class SerialDeviceImp {
      * C++ pulls data via drainSerialData() in receive().
      * This avoids calling into WASM during ASYNCIFY sleep.
      */
-    async _startReadLoop() {
+    async #startReadLoop() {
         if (!this.#port.readable) return;
+
         this.#reader = this.#port.readable.getReader();
         this.reading = true;
         this.pendingData = [];
@@ -152,17 +218,19 @@ class SerialDeviceImp {
                 if (done) break;
                 if (this.reading && (!value || value.length === 0)) continue;
 
-                // Buffer in JS — do NOT call into WASM from here.
-                // C++ will pull via drainSerialData() during receive()/sleep.
                 this.pendingData.push(new Uint8Array(value));
-                if (this.reading === false) break;
+                if (!this.reading) break;
             }
         } catch (e) {
             if (this.reading) {
                 console.error(`[serial:${this.#index}] read error:`, e);
+            } else {
+                console.log(`[serial:${this.#index}] read loop stopped.`);
             }
         } finally {
-            try { this.#reader.releaseLock(); } catch (e) {}
+            try { this.#reader && this.#reader.releaseLock(); } catch (e) {
+                console.error(`[serial:${this.#index}] reader releaseLock failed:`, e);
+            }
             this.#reader = null;
         }
     }
@@ -174,13 +242,16 @@ class SerialDeviceImp {
      */
     drainPendingData() {
         if (!this.pendingData || this.pendingData.length === 0) return null;
+
         const total = this.pendingData.reduce((sum, c) => sum + c.length, 0);
         const result = new Uint8Array(total);
+
         let offset = 0;
         for (const chunk of this.pendingData) {
             result.set(chunk, offset);
             offset += chunk.length;
         }
+
         this.pendingData.length = 0;
         return result;
     }
@@ -202,7 +273,7 @@ class SerialDeviceImp {
 // Maps to the C++ SerialCommunicationManagerImp in serial_web.cc
 // ═══════════════════════════════════════════════════════════════
 
-class SerialCommunicationManagerImp extends EventTarget{
+class SerialCommunicationManagerImp extends EventTarget {
     constructor() {
         if (!navigator.serial) {
             throw new Error("Web Serial API is not supported in this browser.");
@@ -228,6 +299,9 @@ class SerialCommunicationManagerImp extends EventTarget{
                 this.#serialPorts.delete(port);
                 return;
             }
+
+            dev._currentBaud = 9600;
+            dev._currentParity = 'none';
 
             // DON'T call into WASM here — ASYNCIFY may have the stack frozen.
             // Buffer the connect. C++ drains it via drainConnects().
@@ -289,9 +363,9 @@ class SerialCommunicationManagerImp extends EventTarget{
     /**
      * Get or allocate an index for a port based on its VID:PID.
      * Maintains a pool per VID:PID so that:
-     *  - Single stick: always gets the same index after reconnect
+     *  - Single stick: always gets the same index after connect
      *  - Two identical sticks: each gets their own index from the pool
-     *  - After both disconnect and one reconnects: gets first available from pool
+     *  - After both disconnect and one connects: gets first available from pool
      *
      * Note: with identical VID:PID we can't tell which physical stick is which
      * (WebSerial doesn't expose serial numbers), so the pool gives out indices
@@ -373,6 +447,9 @@ class SerialCommunicationManagerImp extends EventTarget{
         const ok = await dev.open(baudRate);
         if (!ok) return null;
 
+        dev._currentBaud = baudRate;
+        dev._currentParity = 'none';
+
         // Register in C++ so listSerialTTYs() finds it
         if (this.wasmModule) {
             const wmSerialOpen = this.wasmModule.cwrap('wm_serial_open', 'string', ['number']);
@@ -416,6 +493,9 @@ class SerialCommunicationManagerImp extends EventTarget{
                 console.warn(`[serial:${dev.index}] auto-open failed, skipping`);
                 continue;
             }
+
+            dev._currentBaud = 9600;
+            dev._currentParity = 'none';
 
             // Register in C++ so listSerialTTYs() finds it
             if (this.wasmModule) {
@@ -475,7 +555,9 @@ class SerialCommunicationManagerImp extends EventTarget{
             try {
                 const wmClose = this.wasmModule.cwrap('wm_serial_close', null, ['number']);
                 wmClose(index);
-            } catch(e) {}
+            } catch (e) {
+                console.error(`[serial:${index}] wm_serial_close failed:`, e);
+            }
         }
     }
 
@@ -484,7 +566,11 @@ class SerialCommunicationManagerImp extends EventTarget{
      */
     async closeAll() {
         for (const dev of this.#serialPorts.values()) {
-            await dev.close();
+            try {
+                await dev.close();
+            } catch (e) {
+                console.error(`[serial:${dev.index}] close failed during closeAll:`, e);
+            }
         }
     }
 
@@ -531,13 +617,23 @@ class SerialCommunicationManagerImp extends EventTarget{
             const dev = mgr.findByIndex(index);
             if (!dev || !mgr.wasmModule) return;
             const data = new Uint8Array(mgr.wasmModule.HEAPU8.buffer, ptr, len).slice();
-            dev.send(data).catch(e => console.error(`[serial:${index}] write failed:`, e));
+
+            // If a baudrate change is in progress, wait for it to complete
+            // before sending. The probe bytes arrive here before the async
+            // close+reopen finishes — chaining through the promise ensures
+            // they're sent as soon as the port is ready.
+            const pending = dev._reopenPromise || Promise.resolve();
+            pending
+                .then(() => dev.send(data))
+                .catch(e => console.error(`[serial:${index}] write failed:`, e));
         };
 
         /**
          * Called by C++ receive() via EM_ASM.
          * Drains JS-side buffer into C++ rxBuffer via serial_on_data().
          * This is safe because we're called from C++ (not during ASYNCIFY sleep).
+         * 
+         * @param {number} index
          */
         globalThis.drainSerialData = (index) => {
             const dev = mgr.findByIndex(index);
@@ -551,6 +647,52 @@ class SerialCommunicationManagerImp extends EventTarget{
                 mgr.wasmModule._free(ptr);
             }
             return data.length;
+        };
+
+        /**
+         * Called by C++ SerialDeviceImp::open() via EM_ASM.
+         * Closes and reopens the WebSerial port if baudrate/parity changed.
+         * Returns 1 if a change was initiated, 0 if settings are unchanged.
+         * Sets serialPortReady[index] = true once the reopen is complete.
+         * C++ polls this flag to wait for the port to be ready.
+         *
+         * @param {number} index
+         * @param {number} baud
+         * @param {number} databits
+         * @param {number} stopbits
+         * @param {number} parity (0=none, 1=even, 2=odd)
+         * @returns {number} 1 if change queued, 0 if no-op
+         */
+        globalThis.serialPortReady = {};
+
+        globalThis.queueBaudrateChange = (index, baud, databits, stopbits, parity) => {
+            const dev = mgr.findByIndex(index);
+            if (!dev) return 0;
+            const newParity = parityMap[parity] || 'none';
+
+            // Skip if same settings
+            if (dev._currentBaud === baud && dev._currentParity === newParity) return 0;
+
+            const oldBaud = dev._currentBaud;
+            dev._currentBaud = baud;
+            dev._currentParity = newParity;
+            globalThis.serialPortReady[index] = false;
+
+            // Async close + reopen. C++ polls serialPortReady[index].
+            dev._reopenPromise = (async () => {
+                try {
+                    if (dev.isOpen) await dev.close();
+                    await dev.open(baud, databits, stopbits, newParity);
+                    console.log(`[serial:${index}] baudrate ${oldBaud} → ${baud}, parity=${newParity}`);
+                } catch (e) {
+                    console.error(`[serial:${index}] baudrate change failed:`, e);
+                } finally {
+                    globalThis.serialPortReady[index] = true;
+                    dev._reopenPromise = null;
+                }
+            })();
+
+            return 1;
         };
     }
 }

@@ -16,8 +16,36 @@ static map<int, SerialDeviceImp*> g_devices;
 SerialDeviceImp::SerialDeviceImp(int idx) : index(idx) {}
 
 bool SerialDeviceImp::open(bool) {
-    if (disconnected) return false; // USB was physically removed
+    if (disconnected) return false;
     isOpen = true;
+
+    // Tell JS to reopen the port if baudrate/parity changed.
+    // Returns 1 if a change was queued, 0 if same settings (no-op).
+    int changed = EM_ASM_INT({
+        if (typeof queueBaudrateChange === 'function')
+            return queueBaudrateChange($0, $1, $2, $3, $4);
+        return 0;
+    }, index, baudrate, databits, stopbits, parity);
+
+    if (changed) {
+        // Poll-wait until JS signals the reopen is complete.
+        // Each usleep yields to the JS event loop, allowing the
+        // async close+open to progress.
+        for (int i = 0; i < 50; i++) { // max 500ms
+            int ready = EM_ASM_INT({
+                return (typeof serialPortReady !== 'undefined' && serialPortReady[$0]) ? 1 : 0;
+            }, index);
+            if (ready) {
+                // Clear the flag for next time
+                EM_ASM({ serialPortReady[$0] = false; }, index);
+                break;
+            }
+            usleep(10000); // 10ms — yields to JS
+        }
+        // Clear any stale data from before the baudrate change
+        rxBuffer.clear();
+    }
+
     return true;
 }
 
@@ -44,20 +72,25 @@ int SerialDeviceImp::receive(vector<uint8_t>* out) {
     if (disconnected) return 0;
     drainFromJS(index);
 
-    // Phase 1: Wait up to 500ms for ANY data to arrive
-    int timeout = 0;
-    while (rxBuffer.empty() && timeout < 50) {
-        usleep(10000);
-        drainFromJS(index);
-        timeout++;
+    // Wait up to 200ms for first data to arrive.
+    // writeSerial initiates the write in the same JS tick, but the
+    // device needs time to process and respond. Each usleep yields
+    // to the JS event loop so async operations (write promises,
+    // read loop) can progress.
+    if (rxBuffer.empty()) {
+        for (int i = 0; i < 20 && rxBuffer.empty(); i++) {
+            usleep(10000); // 10ms × 20 = 200ms max
+            drainFromJS(index);
+        }
     }
+
     if (rxBuffer.empty()) return 0;
 
-    // Phase 2: Wait for rest of message (100ms of silence = done)
+    // Data arrived — collect rest of message until 30ms of silence
     size_t prev_size = 0;
     int idle_count = 0;
-    while (idle_count < 5) {
-        usleep(20000);
+    while (idle_count < 3) {
+        usleep(10000);
         drainFromJS(index);
         if (rxBuffer.size() > prev_size) {
             prev_size = rxBuffer.size();
@@ -68,6 +101,7 @@ int SerialDeviceImp::receive(vector<uint8_t>* out) {
     }
 
     if (out) {
+        out->clear(); // Must clear first — matches native receive() behavior
         out->insert(out->end(), rxBuffer.begin(), rxBuffer.end());
     }
     int n = rxBuffer.size();
@@ -269,7 +303,7 @@ void SerialCommunicationManagerImp::drainDisconnects() {
     }, count);
 }
 
-// ── Drain connect events from JS (auto-reconnect) ───
+// ── Drain connect events from JS (auto-connect) ───
 // JS opens the port and pushes the index into pendingConnects.
 // We register the device in C++ here (safe — C++ context).
 void SerialCommunicationManagerImp::drainConnects() {
@@ -307,7 +341,7 @@ void SerialCommunicationManagerImp::fireTimers() {
 void SerialCommunicationManagerImp::registerWebDevice(int index) {
     for (auto& d : devices) {
         if (d->index == index) {
-            // Re-register: reset state (reconnect case)
+            // Re-register: reset state (connect case)
             d->isOpen = true;
             d->disconnected = false;
             d->rxBuffer.clear();
@@ -363,7 +397,7 @@ void SerialCommunicationManagerImp::markDeviceDisconnected(int index) {
         it->second();
     }
 
-    // Clean up pipeline state so that after reconnect:
+    // Clean up pipeline state so that after connect:
     // - lookup() returns nullptr → detection re-runs
     // - listen_callbacks_ doesn't hold stale pointers
     managed_devices_.erase(dev_name);
