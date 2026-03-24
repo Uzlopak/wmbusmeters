@@ -129,8 +129,11 @@ EMSCRIPTEN_KEEPALIVE
 void wm_serial_close(int idx)
 {
     if (!g_web_serial_manager) return;
-    auto dev = g_web_serial_manager->findByIndex(idx);
-    if (dev) dev->close();
+    // Mark as disconnected so pipeline detects it as dead
+    g_web_serial_manager->markDeviceDisconnected(idx);
+    // Full cleanup — safe because this is only called from JS
+    // when mainRunning === false (user clicked remove button)
+    g_web_serial_manager->cleanupDevice(idx);
 }
 
 } // extern "C"

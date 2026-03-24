@@ -6713,8 +6713,16 @@ function checkIncomingModuleAPI() {
   ignoredModuleProp('onSbrkGrow');
 }
 var ASM_CONSTS = {
-  773344: ($0, $1, $2) => { writeSerial($0, $1, $2); },  
- 773373: ($0) => { if (typeof drainSerialData === 'function') drainSerialData($0); }
+  773408: ($0, $1, $2) => { writeSerial($0, $1, $2); },  
+ 773437: () => { return (typeof pendingDisconnects !== 'undefined') ? pendingDisconnects.length : 0; },  
+ 773525: ($0) => { return pendingDisconnects[$0]; },  
+ 773560: ($0) => { pendingDisconnects.splice(0, $0); },  
+ 773598: () => { return (typeof pendingConnects !== 'undefined') ? pendingConnects.length : 0; },  
+ 773680: ($0) => { return pendingConnects[$0]; },  
+ 773712: ($0) => { pendingConnects.splice(0, $0); },  
+ 773747: ($0) => { try { FS.createDevice('/dev', 'ttyUSB' + $0, function() { return null; }, function(c) {} ); } catch(e) { console.warn('[vfs] createDevice /dev/ttyUSB' + $0 + ' failed:', e); } },  
+ 773927: ($0) => { try { FS.unlink('/dev/ttyUSB' + $0); } catch(e) {} },  
+ 773982: ($0) => { if (typeof drainSerialData === 'function') drainSerialData($0); }
 };
 
 // Imports from the Wasm binary.
