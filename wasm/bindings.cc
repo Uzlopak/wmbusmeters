@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <csetjmp>
 
+#include "version.h"
 #include "serial_web.h"
 
 using namespace std;
@@ -66,7 +67,7 @@ static void split(const char* cmd, int& argc,
 extern "C" {
 
 EMSCRIPTEN_KEEPALIVE
-const char* wm_version() { return "wmbusmeters-wasm-5.0"; }
+const char* wm_version() { return VERSION; }
 
 EMSCRIPTEN_KEEPALIVE
 void wm_free_result() { free(g_result); g_result = nullptr; }
