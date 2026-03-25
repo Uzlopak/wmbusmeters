@@ -169,7 +169,7 @@ body{font-family:var(--mono);background:var(--bg);color:var(--text);height:100vh
 // "Add Port" registers a WebSerial port.
 // Then you type commands exactly like the CLI:
 //   auto:t1
-//   /dev/ttyUSB0:t1 MyMeter multical21 12345678 KEY
+//   /dev/ttyWebUSB0:t1 MyMeter multical21 12345678 KEY
 //   --listmeters
 //   --analyze=...
 // wmbusmeters main() uses the registered port(s).
@@ -193,7 +193,7 @@ serialMgr.addEventListener('portchange', async (e) => {
         const vid = info.usbVendorId ? `VID=0x${info.usbVendorId.toString(16).padStart(4,'0')}` : '';
         const pid = info.usbProductId ? `PID=0x${info.usbProductId.toString(16).padStart(4,'0')}` : '';
         const usb = [vid, pid].filter(Boolean).join(' ');
-        print(`Port connected: /dev/ttyUSB${index}${usb ? ' (' + usb + ')' : ''}`, 'green');
+        print(`Port connected: /dev/ttyWebUSB${index}${usb ? ' (' + usb + ')' : ''}`, 'green');
         renderPortTags();
 
         // Auto-restart if a session was running before disconnect
@@ -204,7 +204,7 @@ serialMgr.addEventListener('portchange', async (e) => {
             execCommand(lastCommand);
         }
     } else {
-        print(`Port disconnected: /dev/ttyUSB${index}`, 'amber');
+        print(`Port disconnected: /dev/ttyWebUSB${index}`, 'amber');
         renderPortTags();
 
         // Stop the running session so wm_main returns to JS
@@ -276,7 +276,7 @@ async function initWasm() {
             const vid = info.usbVendorId ? `VID=0x${info.usbVendorId.toString(16).padStart(4,'0')}` : '';
             const pid = info.usbProductId ? `PID=0x${info.usbProductId.toString(16).padStart(4,'0')}` : '';
             const usb = [vid, pid].filter(Boolean).join(' ');
-            print(`Port auto-detected: /dev/ttyUSB${dev.index}${usb ? ' (' + usb + ')' : ''}`, 'green');
+            print(`Port auto-detected: /dev/ttyWebUSB${dev.index}${usb ? ' (' + usb + ')' : ''}`, 'green');
         }
         if (autoOpened.length > 0) {
             print('', 'dim');
@@ -292,7 +292,7 @@ async function initWasm() {
 // ── Add Port ──────────────────────────────────────────
 // Opens the browser serial port dialog.
 // The port is registered so wmbusmeters can find it
-// via listSerialTTYs() → "ttyUSB0" etc.
+// via listSerialTTYs() → "ttyWebUSB0" etc.
 async function addPort() {
     if (!wasmReady) { print('WASM not ready yet.', 'red'); return; }
 
@@ -306,8 +306,8 @@ async function addPort() {
         const pid = info.usbProductId ? `PID=0x${info.usbProductId.toString(16).padStart(4,'0')}` : '';
         const usb = [vid, pid].filter(Boolean).join(' ');
 
-        print(`Port added: /dev/ttyUSB${dev.index}${usb ? ' (' + usb + ')' : ''}`, 'green');
-        print(`Use it as: auto:t1  or  /dev/ttyUSB${dev.index}:t1`, 'dim');
+        print(`Port added: /dev/ttyWebUSB${dev.index}${usb ? ' (' + usb + ')' : ''}`, 'green');
+        print(`Use it as: auto:t1  or  /dev/ttyWebUSB${dev.index}:t1`, 'dim');
         print('', 'dim');
 
         renderPortTags();
@@ -328,7 +328,7 @@ async function removePort(index) {
         return;
     }
     await serialMgr.closeByIndex(index);
-    print(`Port /dev/ttyUSB${index} removed.`, 'dim');
+    print(`Port /dev/ttyWebUSB${index} removed.`, 'dim');
     renderPortTags();
 }
 
@@ -350,7 +350,7 @@ function renderPortTags() {
 
         const tag = document.createElement('span');
         tag.className = 'port-tag';
-        tag.innerHTML = `<span class="port-dot"></span>/dev/ttyUSB${dev.index}${vid ? ' <span style="color:var(--dim)">' + vid + '</span>' : ''}<span class="port-remove" onclick="removePort(${dev.index})">×</span>`;
+        tag.innerHTML = `<span class="port-dot"></span>/dev/ttyWebUSB${dev.index}${vid ? ' <span style="color:var(--dim)">' + vid + '</span>' : ''}<span class="port-remove" onclick="removePort(${dev.index})">×</span>`;
         container.appendChild(tag);
     }
 }

@@ -469,7 +469,7 @@ class SerialCommunicationManagerImp extends EventTarget {
         await this.#initialized.promise;
         return [...this.#serialPorts.values()]
             .filter(d => d.isOpen)
-            .map(d => `/dev/ttyUSB${d.index}`)
+            .map(d => `/dev/ttyWebUSB${d.index}`)
             .sort();
     }
 

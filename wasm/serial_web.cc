@@ -113,7 +113,7 @@ int SerialDeviceImp::receive(vector<uint8_t>* out) {
 // Returns false when USB is disconnected → pipeline detects dead device.
 bool SerialDeviceImp::working() { return isOpen && !disconnected; }
 
-string SerialDeviceImp::device() { return "/dev/ttyUSB" + to_string(index); }
+string SerialDeviceImp::device() { return "/dev/ttyWebUSB" + to_string(index); }
 void SerialDeviceImp::disableCallbacks() {}
 void SerialDeviceImp::enableCallbacks() {}
 bool SerialDeviceImp::skippingCallbacks() { return false; }
@@ -148,7 +148,7 @@ shared_ptr<SerialDevice> SerialCommunicationManagerImp::createSerialDeviceTTY(
         if (d->device() == dev && !d->disconnected) { found = d; break; }
     }
 
-    if (!found && dev.find("/dev/ttyUSB") == 0) {
+    if (!found && dev.find("/dev/ttyWebUSB") == 0) {
         try {
             int idx = stoi(dev.substr(11));
             for (auto& d : devices) {
@@ -241,7 +241,7 @@ vector<string> SerialCommunicationManagerImp::listSerialTTYs() {
     vector<string> result;
     for (auto& d : devices) {
         if (!d->disconnected) {
-            result.push_back("/dev/ttyUSB" + to_string(d->index));
+            result.push_back("/dev/ttyWebUSB" + to_string(d->index));
         }
     }
     return result;
@@ -317,7 +317,7 @@ void SerialCommunicationManagerImp::drainConnects() {
             return pendingConnects[$0];
         }, i);
         registerWebDevice(idx);
-        printf("(serial) device /dev/ttyUSB%d connected\n", idx);
+        printf("(serial) device /dev/ttyWebUSB%d connected\n", idx);
     }
 
     EM_ASM({
@@ -357,12 +357,12 @@ void SerialCommunicationManagerImp::registerWebDevice(int index) {
     // Create character device in VFS so stat() returns S_ISCHR=true
     EM_ASM({
         try {
-            FS.createDevice('/dev', 'ttyUSB' + $0,
+            FS.createDevice('/dev', 'ttyWebUSB' + $0,
                 function() { return null; },
                 function(c) {}
             );
         } catch(e) {
-            console.warn('[vfs] createDevice /dev/ttyUSB' + $0 + ' failed:', e);
+            console.warn('[vfs] createDevice /dev/ttyWebUSB' + $0 + ' failed:', e);
         }
     }, index);
 }
@@ -388,7 +388,7 @@ void SerialCommunicationManagerImp::markDeviceDisconnected(int index) {
     dev->isOpen = false;
     dev->rxBuffer.clear();
 
-    string dev_name = "/dev/ttyUSB" + to_string(index);
+    string dev_name = "/dev/ttyWebUSB" + to_string(index);
     printf("(serial) device %s disconnected\n", dev_name.c_str());
 
     // Fire onDisappear callback so BusDevice is notified immediately
@@ -409,7 +409,7 @@ void SerialCommunicationManagerImp::markDeviceDisconnected(int index) {
 // Called after the pipeline has finished with the device
 // (via removeNonWorking or explicit user action).
 void SerialCommunicationManagerImp::cleanupDevice(int index) {
-    string dev_name = "/dev/ttyUSB" + to_string(index);
+    string dev_name = "/dev/ttyWebUSB" + to_string(index);
     managed_devices_.erase(dev_name);
 
     for (auto it = listen_callbacks_.begin(); it != listen_callbacks_.end(); ) {
@@ -438,7 +438,7 @@ void SerialCommunicationManagerImp::cleanupDevice(int index) {
         devices.end());
 
     EM_ASM({
-        try { FS.unlink('/dev/ttyUSB' + $0); } catch(e) {}
+        try { FS.unlink('/dev/ttyWebUSB' + $0); } catch(e) {}
     }, index);
 }
 
