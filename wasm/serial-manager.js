@@ -496,8 +496,7 @@ class SerialCommunicationManagerImp extends EventTarget {
 
             // Register in C++ so listSerialTTYs() finds it
             if (this.wasmModule) {
-                const wmSerialOpen = this.wasmModule.cwrap('wm_serial_open', 'string', ['number']);
-                wmSerialOpen(dev.index);
+                this.wasmModule.cwrap('wm_serial_open', null, ['number'], [dev.index]);
             }
 
             opened.push(dev);
