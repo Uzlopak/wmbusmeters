@@ -6734,7 +6734,6 @@ var _free = Module['_free'] = makeInvalidEarlyAccess('_free');
 var _fflush = makeInvalidEarlyAccess('_fflush');
 var _serial_on_data = Module['_serial_on_data'] = makeInvalidEarlyAccess('_serial_on_data');
 var _wm_version = Module['_wm_version'] = makeInvalidEarlyAccess('_wm_version');
-var _wm_free_result = Module['_wm_free_result'] = makeInvalidEarlyAccess('_wm_free_result');
 var _wm_main = Module['_wm_main'] = makeInvalidEarlyAccess('_wm_main');
 var _wm_stop = Module['_wm_stop'] = makeInvalidEarlyAccess('_wm_stop');
 var _wm_serial_open = Module['_wm_serial_open'] = makeInvalidEarlyAccess('_wm_serial_open');
@@ -6795,7 +6794,6 @@ function assignWasmExports(wasmExports) {
   assert(typeof wasmExports['fflush'] != 'undefined', 'missing Wasm export: fflush');
   assert(typeof wasmExports['serial_on_data'] != 'undefined', 'missing Wasm export: serial_on_data');
   assert(typeof wasmExports['wm_version'] != 'undefined', 'missing Wasm export: wm_version');
-  assert(typeof wasmExports['wm_free_result'] != 'undefined', 'missing Wasm export: wm_free_result');
   assert(typeof wasmExports['wm_main'] != 'undefined', 'missing Wasm export: wm_main');
   assert(typeof wasmExports['wm_stop'] != 'undefined', 'missing Wasm export: wm_stop');
   assert(typeof wasmExports['wm_serial_open'] != 'undefined', 'missing Wasm export: wm_serial_open');
@@ -6852,7 +6850,6 @@ function assignWasmExports(wasmExports) {
   _fflush = createExportWrapper('fflush', 1);
   _serial_on_data = Module['_serial_on_data'] = createExportWrapper('serial_on_data', 3);
   _wm_version = Module['_wm_version'] = createExportWrapper('wm_version', 0);
-  _wm_free_result = Module['_wm_free_result'] = createExportWrapper('wm_free_result', 0);
   _wm_main = Module['_wm_main'] = createExportWrapper('wm_main', 1);
   _wm_stop = Module['_wm_stop'] = createExportWrapper('wm_stop', 0);
   _wm_serial_open = Module['_wm_serial_open'] = createExportWrapper('wm_serial_open', 1);

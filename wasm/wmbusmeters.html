@@ -241,9 +241,8 @@ async function initWasm() {
 
         serialMgr.setWasmModule(wasmModule);
 
-        wm.free    = wasmModule.cwrap('wm_free_result', null, []);
         wm.version = wasmModule.cwrap('wm_version', 'string', []);
-        wm.main    = wasmModule.cwrap('wm_main', 'string', ['string'], { async: true });
+        wm.main    = wasmModule.cwrap('wm_main', 'number', ['string'], { async: true });
         wm.stop    = wasmModule.cwrap('wm_stop', null, []);
 
         wasmReady = true;
@@ -383,16 +382,10 @@ async function execCommand(cmd) {
     document.getElementById('sbStatus').textContent = 'running...';
 
     try {
-        const raw = await wm.main(cmd);
-        wm.free();
-
-        try {
-            const res = JSON.parse(raw);
-            if (res.exit_code !== 0) {
-                print(`(exit code: ${res.exit_code})`, 'amber');
-            }
-        } catch (e) {}
-
+        const exitCode = await wm.main(cmd);
+        if (exitCode !== 0) {
+            print(`(exit code: ${exitCode})`, 'amber');
+        }
     } catch (e) {
         print('WASM error: ' + e.message, 'red');
     }

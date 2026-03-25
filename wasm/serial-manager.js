@@ -452,10 +452,7 @@ class SerialCommunicationManagerImp extends EventTarget {
 
         // Register in C++ so listSerialTTYs() finds it
         if (this.wasmModule) {
-            const wmSerialOpen = this.wasmModule.cwrap('wm_serial_open', 'string', ['number']);
-            const wmFree = this.wasmModule.cwrap('wm_free_result', null, []);
-            wmSerialOpen(dev.index);
-            wmFree();
+            this.wasmModule.ccall('wm_serial_open', null, ['number'], [dev.index]);
         }
 
         return dev;
@@ -500,9 +497,7 @@ class SerialCommunicationManagerImp extends EventTarget {
             // Register in C++ so listSerialTTYs() finds it
             if (this.wasmModule) {
                 const wmSerialOpen = this.wasmModule.cwrap('wm_serial_open', 'string', ['number']);
-                const wmFree = this.wasmModule.cwrap('wm_free_result', null, []);
                 wmSerialOpen(dev.index);
-                wmFree();
             }
 
             opened.push(dev);

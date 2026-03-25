@@ -120,7 +120,6 @@ em++ \
   -s NO_EXIT_RUNTIME=1 \
   -s EXPORTED_FUNCTIONS='[
     "_wm_version",
-    "_wm_free_result",
     "_wm_main",
     "_wm_stop",
     "_wm_serial_open",
