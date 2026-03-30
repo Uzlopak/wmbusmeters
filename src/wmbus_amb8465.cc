@@ -516,8 +516,8 @@ string WMBusAmber::getDeviceUniqueId()
     LOCK_WMBUS_EXECUTING_COMMAND(get_device_unique_id);
 
     request_.resize(4);
-    request_[0] = AMBER_SERIAL_SOF;
-    request_[1] = CMD_SERIALNO_REQ;
+    request_[0] = CMD_STX;
+    request_[1] = CMD_GET_SERIALNO;
     request_[2] = 0; // No payload
     request_[3] = xorChecksum(request_, 0, 3);
 
@@ -525,7 +525,7 @@ string WMBusAmber::getDeviceUniqueId()
     bool sent = serial()->send(request_);
     if (!sent) return "?";
 
-    bool ok = waitForResponse(CMD_SERIALNO_REQ | 0x80);
+    bool ok = waitForResponse(CMD_GET_SERIALNO | 0x80);
     if (!ok) return "?";
 
     if (response_.size() < 5) return "ERR";
@@ -559,7 +559,7 @@ bool WMBusAmber::getConfiguration()
     LOCK_WMBUS_EXECUTING_COMMAND(getConfiguration);
 
     request_.resize(6);
-    request_[0] = AMBER_SERIAL_SOF;
+    request_[0] = CMD_STX;
     request_[1] = CMD_GET_REQ;
     request_[2] = 0x02;
     request_[3] = 0x00;
@@ -601,7 +601,7 @@ bool WMBusAmber::deviceSetLinkModes(LinkModeSet lms)
         LOCK_WMBUS_EXECUTING_COMMAND(devicesSetLinkModes);
 
         request_.resize(5);
-        request_[0] = AMBER_SERIAL_SOF;
+        request_[0] = CMD_STX;
         request_[1] = CMD_SET_MODE_REQ;
         request_[2] = 1; // Len
         request_[3] = setupAmberBusDeviceToReceiveTelegrams(lms);
@@ -754,8 +754,8 @@ void WMBusAmber::processSerialData()
             verbose("(amb8465) rx long delay (%lds), drop incomplete telegram\n", chunk_time.tv_sec);
 
             // Only trigger a protocol error if we were receiving a specific command response 
-            // from the stick (starts with AMBER_SERIAL_SOF).
-            if (read_buffer_.size() > 0 && read_buffer_[0] == AMBER_SERIAL_SOF)
+            // from the stick (starts with CMD_STX).
+            if (read_buffer_.size() > 0 && read_buffer_[0] == CMD_STX)
             {
                 protocolErrorDetected();
             }
@@ -847,13 +847,13 @@ void WMBusAmber::handleMessage(int msgid, vector<uchar> &frame, int rssi_dbm)
         notifyResponseIsHere(0x80|CMD_GET_REQ);
         break;
     }
-    case (0x80|CMD_SERIALNO_REQ):
+    case (0x80|CMD_GET_SERIALNO):
     {
         verbose("(amb8465) get device id completed\n");
         response_.clear();
         response_.insert(response_.end(), frame.begin(), frame.end());
         debugPayload("(amb8465) get device id response", response_);
-        notifyResponseIsHere(0x80|CMD_SERIALNO_REQ);
+        notifyResponseIsHere(0x80|CMD_GET_SERIALNO);
         break;
     }
     case (0x80|CMD_DATA_REQ):
@@ -902,7 +902,7 @@ bool WMBusAmber::sendTelegram(LinkMode lm, TelegramFormat format, vector<uchar> 
     {
         // Switch to the send link mode.
         request_.resize(5);
-        request_[0] = AMBER_SERIAL_SOF;
+        request_[0] = CMD_STX;
         request_[1] = CMD_SET_MODE_REQ;
         request_[2] = 1; // Len
         request_[3] = link_mode;
@@ -927,7 +927,7 @@ bool WMBusAmber::sendTelegram(LinkMode lm, TelegramFormat format, vector<uchar> 
     }
 
     request_.resize(content.size()+4);
-    request_[0] = AMBER_SERIAL_SOF;
+    request_[0] = CMD_STX;
     request_[1] = CMD_DATA_REQ;
     request_[2] = content.size();
     for (size_t i = 0; i < content.size(); ++i)
@@ -957,7 +957,7 @@ bool WMBusAmber::sendTelegram(LinkMode lm, TelegramFormat format, vector<uchar> 
     {
         // Restore the link mode.
         request_.resize(5);
-        request_[0] = AMBER_SERIAL_SOF;
+        request_[0] = CMD_STX;
         request_[1] = CMD_SET_MODE_REQ;
         request_[2] = 1; // Len
         request_[3] = last_set_link_mode_;
@@ -1032,7 +1032,7 @@ AccessCheck detectAMB8465AMB3665(Detected *detected, shared_ptr<SerialCommunicat
     // Query all of the non-volatile parameter memory.
     vector<uchar> request;
     request.resize(6);
-    request[0] = AMBER_SERIAL_SOF;
+    request[0] = CMD_STX;
     request[1] = CMD_GET_REQ;
     request[2] = 0x02;
     request[3] = 0x00; // Start at byte 0
@@ -1173,7 +1173,7 @@ static AccessCheck tryFactoryResetAMB8465(string device, shared_ptr<SerialCommun
 
     vector<uchar> request_;
     request_.resize(4);
-    request_[0] = AMBER_SERIAL_SOF;
+    request_[0] = CMD_STX;
     request_[1] = CMD_FACTORYRESET_REQ;
     request_[2] = 0; // No payload
     request_[3] = xorChecksum(request_, 0, 3);
