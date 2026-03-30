@@ -862,7 +862,43 @@ void WMBusAmber::handleMessage(int msgid, vector<uchar> &frame, int rssi_dbm)
         response_.clear();
         response_.insert(response_.end(), frame.begin(), frame.end());
         debugPayload("(amb8465) send telegram response", response_);
-        notifyResponseIsHere(0x80|CMD_DATA_REQ);
+        notifyResponseIsHere(CMD_DATA_CNF);
+        break;
+    }
+    case (CMD_FACTORYRESET_CNF):
+    {
+        verbose("(amb8465) factory reset completed\n");
+        response_.clear();
+        response_.insert(response_.end(), frame.begin(), frame.end());
+        debugPayload("(amb8465) factory reset response", response_);
+        notifyResponseIsHere(CMD_FACTORYRESET_CNF);
+        break;
+    }
+    case (CMD_RESET_CNF):
+    {
+        verbose("(amb8465) module reset completed\n");
+        response_.clear();
+        response_.insert(response_.end(), frame.begin(), frame.end());
+        debugPayload("(amb8465) module reset response", response_);
+        notifyResponseIsHere(CMD_RESET_CNF);
+        break;
+    }
+    case (CMD_SET_CNF):
+    {
+        verbose("(amb8465) set user setting completed\n");
+        response_.clear();
+        response_.insert(response_.end(), frame.begin(), frame.end());
+        debugPayload("(amb8465) set user setting response", response_);
+        notifyResponseIsHere(CMD_SET_CNF);
+        break;
+    }
+    case (CMD_SETUARTSPEED_CNF):
+    {
+        verbose("(amb8465) set UART speed completed\n");
+        response_.clear();
+        response_.insert(response_.end(), frame.begin(), frame.end());
+        debugPayload("(amb8465) set UART speed response", response_);
+        notifyResponseIsHere(CMD_SETUARTSPEED_CNF);
         break;
     }
     default:
