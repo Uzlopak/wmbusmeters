@@ -1,82 +1,82 @@
 // Copyright (C) 2019-2022 Fredrik Öhrström (CC0-1.0)
 // Defines documented in the Manual for the AMBER wM-Bus Modules Version 2.7
 
-#define CMD_STX                     0xFF
+#define CMD_STX                           0xFF
 
-#define CMD_TYPE_REQ                (0 << 6)
-#define CMD_TYPE_CNF                (2 << 6)
+#define CMD_TYPE_REQ                      (0 << 6)
+#define CMD_TYPE_CNF                      (2 << 6)
 
-#define CMD_DATA                    0x00
-#define CMD_DATA_REQ                (CMD_DATA | CMD_TYPE_REQ)
-#define CMD_DATA_CNF                (CMD_DATA | CMD_TYPE_CNF)
+#define CMD_DATA                          0x00
+#define CMD_DATA_REQ                      (CMD_DATA | CMD_TYPE_REQ)
+#define CMD_DATA_CNF                      (CMD_DATA | CMD_TYPE_CNF)
 
-#define CMD_DATARETRY               0x02
-#define CMD_DATARETRY_REQ           (CMD_DATARETRY | CMD_TYPE_REQ)
-#define CMD_DATARETRY_CNF           (CMD_DATARETRY | CMD_TYPE_CNF)
+#define CMD_DATARETRY                     0x02
+#define CMD_DATARETRY_REQ                 (CMD_DATARETRY | CMD_TYPE_REQ)
+#define CMD_DATARETRY_CNF                 (CMD_DATARETRY | CMD_TYPE_CNF)
 
-#define CMD_DATA_IND                0x03
-#define CMD_DATA_IND_REQ            (CMD_DATA_IND | CMD_TYPE_REQ)
-#define CMD_DATA_IND_CNF            (CMD_DATA_IND | CMD_TYPE_CNF)
+#define CMD_DATA_IND                      0x03
+#define CMD_DATA_IND_REQ                  (CMD_DATA_IND | CMD_TYPE_REQ)
+#define CMD_DATA_IND_CNF                  (CMD_DATA_IND | CMD_TYPE_CNF)
 
-#define CMD_SET_MODE                0x04
-#define CMD_SET_MODE_REQ            (CMD_SET_MODE | CMD_TYPE_REQ)
-#define CMD_SET_MODE_CNF            (CMD_SET_MODE | CMD_TYPE_CNF)
+#define CMD_SET_MODE                      0x04
+#define CMD_SET_MODE_REQ                  (CMD_SET_MODE | CMD_TYPE_REQ)
+#define CMD_SET_MODE_CNF                  (CMD_SET_MODE | CMD_TYPE_CNF)
 
-#define CMD_RESET                   0x05
-#define CMD_RESET_REQ               (CMD_RESET | CMD_TYPE_REQ)
-#define CMD_RESET_CNF               (CMD_RESET | CMD_TYPE_CNF)
+#define CMD_RESET                         0x05
+#define CMD_RESET_REQ                     (CMD_RESET | CMD_TYPE_REQ)
+#define CMD_RESET_CNF                     (CMD_RESET | CMD_TYPE_CNF)
 
-#define CMD_SET_CHANNEL             0x06
-#define CMD_SET_CHANNEL_REQ         (CMD_SET_CHANNEL | CMD_TYPE_REQ)
-#define CMD_SET_CHANNEL_CNF         (CMD_SET_CHANNEL | CMD_TYPE_CNF)
+#define CMD_SET_CHANNEL                   0x06
+#define CMD_SET_CHANNEL_REQ               (CMD_SET_CHANNEL | CMD_TYPE_REQ)
+#define CMD_SET_CHANNEL_CNF               (CMD_SET_CHANNEL | CMD_TYPE_CNF)
 
-#define CMD_SET                     0x09
-#define CMD_SET_REQ                 (CMD_SET | CMD_TYPE_REQ)
-#define CMD_SET_CNF                 (CMD_SET | CMD_TYPE_CNF)
+#define CMD_SET                           0x09
+#define CMD_SET_REQ                       (CMD_SET | CMD_TYPE_REQ)
+#define CMD_SET_CNF                       (CMD_SET | CMD_TYPE_CNF)
 
-#define CMD_SETUARTSPEED            0x10
-#define CMD_SETUARTSPEED_REQ        (CMD_SETUARTSPEED | CMD_TYPE_REQ)
-#define CMD_SETUARTSPEED_CNF        (CMD_SETUARTSPEED | CMD_TYPE_CNF)
+#define CMD_SETUARTSPEED                  0x10
+#define CMD_SETUARTSPEED_REQ              (CMD_SETUARTSPEED | CMD_TYPE_REQ)
+#define CMD_SETUARTSPEED_CNF              (CMD_SETUARTSPEED | CMD_TYPE_CNF)
 
-#define CMD_GET                     0x0A
-#define CMD_GET_REQ                 (CMD_GET | CMD_TYPE_REQ)
-#define CMD_GET_CNF                 (CMD_GET | CMD_TYPE_CNF)
+#define CMD_GET                           0x0A
+#define CMD_GET_REQ                       (CMD_GET | CMD_TYPE_REQ)
+#define CMD_GET_CNF                       (CMD_GET | CMD_TYPE_CNF)
 
-#define CMD_GET_SERIALNO            0x0B
-#define CMD_GET_SERIALNO_REQ        (CMD_GET_SERIALNO | CMD_TYPE_REQ)
-#define CMD_GET_SERIALNO_CNF        (CMD_GET_SERIALNO | CMD_TYPE_CNF)
+#define CMD_GET_SERIALNO                  0x0B
+#define CMD_GET_SERIALNO_REQ              (CMD_GET_SERIALNO | CMD_TYPE_REQ)
+#define CMD_GET_SERIALNO_CNF              (CMD_GET_SERIALNO | CMD_TYPE_CNF)
 
-#define CMD_GET_FWRELEASE           0x0C
-#define CMD_GET_FWRELEASE_REQ       (CMD_GET_FWRELEASE | CMD_TYPE_REQ)
-#define CMD_GET_FWRELEASE_CNF       (CMD_GET_FWRELEASE | CMD_TYPE_CNF)
+#define CMD_GET_FWRELEASE                 0x0C
+#define CMD_GET_FWRELEASE_REQ             (CMD_GET_FWRELEASE | CMD_TYPE_REQ)
+#define CMD_GET_FWRELEASE_CNF             (CMD_GET_FWRELEASE | CMD_TYPE_CNF)
 
-#define CMD_RSSI                    0x0D
-#define CMD_RSSI_REQ                (CMD_RSSI | CMD_TYPE_REQ)
-#define CMD_RSSI_CNF                (CMD_RSSI | CMD_TYPE_CNF)
+#define CMD_RSSI                          0x0D
+#define CMD_RSSI_REQ                      (CMD_RSSI | CMD_TYPE_REQ)
+#define CMD_RSSI_CNF                      (CMD_RSSI | CMD_TYPE_CNF)
 
-#define CMD_FACTORYRESET            0x11
-#define CMD_FACTORYRESET_REQ        (CMD_FACTORYRESET | CMD_TYPE_REQ)
-#define CMD_FACTORYRESET_CNF        (CMD_FACTORYRESET | CMD_TYPE_CNF)
+#define CMD_FACTORYRESET                  0x11
+#define CMD_FACTORYRESET_REQ              (CMD_FACTORYRESET | CMD_TYPE_REQ)
+#define CMD_FACTORYRESET_CNF              (CMD_FACTORYRESET | CMD_TYPE_CNF)
 
-#define CMD_DATA_PRELOAD            0x30
-#define CMD_DATA_PRELOAD_REQ        (CMD_DATA_PRELOAD | CMD_TYPE_REQ)
-#define CMD_DATA_PRELOAD_CNF        (CMD_DATA_PRELOAD | CMD_TYPE_CNF)
+#define CMD_DATA_PRELOAD                  0x30
+#define CMD_DATA_PRELOAD_REQ              (CMD_DATA_PRELOAD | CMD_TYPE_REQ)
+#define CMD_DATA_PRELOAD_CNF              (CMD_DATA_PRELOAD | CMD_TYPE_CNF)
 
-#define CMD_DATA_CLR_PRELOAD        0x31
-#define CMD_DATA_CLR_PRELOAD_REQ    (CMD_DATA_CLR_PRELOAD | CMD_TYPE_REQ)
-#define CMD_DATA_CLR_PRELOAD_CNF    (CMD_DATA_CLR_PRELOAD | CMD_TYPE_CNF)
+#define CMD_DATA_CLR_PRELOAD              0x31
+#define CMD_DATA_CLR_PRELOAD_REQ          (CMD_DATA_CLR_PRELOAD | CMD_TYPE_REQ)
+#define CMD_DATA_CLR_PRELOAD_CNF          (CMD_DATA_CLR_PRELOAD | CMD_TYPE_CNF)
 
-#define CMD_SET_AES_KEY             0x50
-#define CMD_SET_AES_KEY_REQ         (CMD_SET_AES_KEY | CMD_TYPE_REQ)
-#define CMD_SET_AES_KEY_CNF         (CMD_SET_AES_KEY | CMD_TYPE_CNF)
+#define CMD_SET_AES_KEY                   0x50
+#define CMD_SET_AES_KEY_REQ               (CMD_SET_AES_KEY | CMD_TYPE_REQ)
+#define CMD_SET_AES_KEY_CNF               (CMD_SET_AES_KEY | CMD_TYPE_CNF)
 
-#define CMD_CLR_AES_KEY             0x51
-#define CMD_CLR_AES_KEY_REQ         (CMD_CLR_AES_KEY | CMD_TYPE_REQ)
-#define CMD_CLR_AES_KEY_CNF         (CMD_CLR_AES_KEY | CMD_TYPE_CNF)
+#define CMD_CLR_AES_KEY                   0x51
+#define CMD_CLR_AES_KEY_REQ               (CMD_CLR_AES_KEY | CMD_TYPE_REQ)
+#define CMD_CLR_AES_KEY_CNF               (CMD_CLR_AES_KEY | CMD_TYPE_CNF)
 
-#define CMD_GET_AES_DEV             0x52
-#define CMD_GET_AES_DEV_REQ         (CMD_GET_AES_DEV | CMD_TYPE_REQ)
-#define CMD_GET_AES_DEV_CNF         (CMD_GET_AES_DEV | CMD_TYPE_CNF)
+#define CMD_GET_AES_DEV                   0x52
+#define CMD_GET_AES_DEV_REQ               (CMD_GET_AES_DEV | CMD_TYPE_REQ)
+#define CMD_GET_AES_DEV_CNF               (CMD_GET_AES_DEV | CMD_TYPE_CNF)
 
 // Both 8465 868MHz and 8336 169Mhz link modes.
 #define LIST_OF_AMBER_8465_8336_LINK_MODES \
