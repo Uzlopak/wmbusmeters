@@ -1079,14 +1079,7 @@ static AccessCheck tryDetectAMB8465AMB3665AtBaud(Detected *detected,
     }
 
     // Query all of the non-volatile parameter memory.
-    vector<uchar> request;
-    request.resize(6);
-    request[0] = CMD_STX;
-    request[1] = CMD_GET_REQ;
-    request[2] = 0x02; // Length of payload
-    request[3] = 0x00; // Start at byte 0
-    request[4] = 0x80; // End at byte 127
-    request[5] = 0x77; // Checksum
+    vector<uchar> request = { CMD_STX, CMD_GET_REQ, 0x02, 0x00, 0x80, 0x77 };
 
     bool sent = false;
     count = 0;
@@ -1234,12 +1227,7 @@ static AccessCheck tryFactoryResetAMB8465(string device, shared_ptr<SerialCommun
     serial->receive(&data);
     data.clear();
 
-    vector<uchar> request_;
-    request_.resize(4);
-    request_[0] = CMD_STX;
-    request_[1] = CMD_FACTORYRESET_REQ;
-    request_[2] = 0; // No payload
-    request_[3] = 0x33; // Checksum
+    vector<uchar> request_ = { CMD_STX, CMD_FACTORYRESET_REQ, 0, 0x33 };
 
     verbose("(amb8465) try factory reset %s using baud %d\n", device.c_str(), baud);
     serial->send(request_);

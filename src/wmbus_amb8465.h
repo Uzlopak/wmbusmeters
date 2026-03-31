@@ -78,6 +78,16 @@
 #define CMD_GET_AES_DEV_REQ               (CMD_GET_AES_DEV | CMD_TYPE_REQ)
 #define CMD_GET_AES_DEV_CNF               (CMD_GET_AES_DEV | CMD_TYPE_CNF)
 
+#define AMBER_MEMPOS_UART_CMD_OUT_ENABLE        0x05
+#define AMBER_MEMPOS_RSSI_ENABLE                0x45
+#define AMBER_MEMPOS_MODE_PRESELECT             0x46
+
+#define AMBER_UART_MAX_BAUD_115200        0x07
+
+#define AMBER_TARGET_BAUDRATE             115200
+#define AMBER_TARGET_BAUDRATE_CODE        AMBER_UART_MAX_BAUD_115200
+#define AMBER_FACTORY_DEFAULT_BAUDRATE    9600
+
 // Both 8465 868MHz and 8336 169Mhz link modes.
 #define LIST_OF_AMBER_8465_8336_LINK_MODES \
     X(USER_SELECTED,0x00,txrx,All parameters user selected.)        \
