@@ -1227,10 +1227,10 @@ static AccessCheck tryFactoryResetAMB8465(string device, shared_ptr<SerialCommun
     serial->receive(&data);
     data.clear();
 
-    vector<uchar> request_ = { CMD_STX, CMD_FACTORYRESET_REQ, 0, 0x33 };
+    vector<uchar> factoryResetRequest = { CMD_STX, CMD_FACTORYRESET_REQ, 0, 0x33 };
 
     verbose("(amb8465) try factory reset %s using baud %d\n", device.c_str(), baud);
-    serial->send(request_);
+    serial->send(factoryResetRequest);
     // Wait for 100ms so that the USB stick have time to prepare a response.
     usleep(1000*100);
     serial->receive(&data);
