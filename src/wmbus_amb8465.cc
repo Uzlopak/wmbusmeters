@@ -1029,17 +1029,21 @@ bool WMBusAmber::sendTelegram(LinkMode lm, TelegramFormat format, vector<uchar> 
     return rc;
 }
 
-AccessCheck detectAMB8465AMB3665(Detected *detected, shared_ptr<SerialCommunicationManager> manager)
+static int detect_baudrate_ordered[] = { 9600 }; // { 115200, 9600, 19200, 38400, 56000, 4800, 2400, 1200, 0 };
+
+static AccessCheck tryDetectAMB8465AMB3665AtBaud(Detected *detected,
+                                                  shared_ptr<SerialCommunicationManager> manager,
+                                                  int baud)
 {
     assert(detected->found_file != "");
 
     // Talk to the device and expect a very specific answer.
-    auto serial = manager->createSerialDeviceTTY(detected->found_file.c_str(), 9600, PARITY::NONE, "detect amb8465/amb3665");
+    auto serial = manager->createSerialDeviceTTY(detected->found_file.c_str(), baud, PARITY::NONE, "detect amb8465/amb3665");
     serial->disableCallbacks();
     bool ok = serial->open(false);
     if (!ok)
     {
-        verbose("(amb8465/3665) could not open tty %s for detection\n", detected->found_file.c_str());
+        verbose("(amb8465/3665) could not open tty %s at %d bps for detection\n", detected->found_file.c_str(), baud);
         return AccessCheck::NoSuchDevice;
     }
 
@@ -1063,12 +1067,12 @@ AccessCheck detectAMB8465AMB3665(Detected *detected, shared_ptr<SerialCommunicat
     {
         if (count <= 10)
         {
-            debug("(amb8465/3665) cleared %zu bytes from serial buffer\n", response.size());
+            debug("(amb8465/3665) cleared %zu bytes at %d bps from serial buffer\n", response.size(), baud);
         }
         else
         {
-            debug("(amb8465/3665) way too much data received %zu when trying to detect! cannot clear serial buffer!\n",
-                  response.size());
+            debug("(amb8465/3665) way too much data received %zu at %d bps when trying to detect! cannot clear serial buffer!\n",
+                  response.size(), baud);
         }
 
         response.clear();
@@ -1088,19 +1092,19 @@ AccessCheck detectAMB8465AMB3665(Detected *detected, shared_ptr<SerialCommunicat
     count = 0;
     do
     {
-        debug("(amb8465/3665) sending %zu bytes attempt %d\n", request.size(), count);
+        debug("(amb8465/3665) sending %zu bytes attempt %d at %d bps\n", request.size(), count, baud);
         sent = serial->send(request);
-        debug("(amb8465/3665) sent %zu bytes %s\n", request.size(), sent?"OK":"Failed");
+        debug("(amb8465/3665) sent %zu bytes at %d bps  %s\n", request.size(), baud, sent?"OK":"Failed");
         if (!sent)
         {
             // We failed to send! Why? We have successfully opened the tty....
             // Perhaps the dongle needs to wake up. Lets try again in 100 ms.
             usleep(1000*100);
-            count ++;
+            count++;
             if (count >= 4)
             {
                 // Tried and failed 3 times.
-                debug("(amb8465/3665) failed to sent query! Giving up!\n");
+                debug("(amb8465/3665) failed to send query at %d bps!\n", baud);
                 verbose("(amb8465/3665) are you there? no, nothing is there.\n");
                 serial->close();
                 return AccessCheck::NoProperResponse;
@@ -1121,7 +1125,7 @@ AccessCheck detectAMB8465AMB3665(Detected *detected, shared_ptr<SerialCommunicat
     {
         if (count > 3)
         {
-            verbose("(amb8465/3665) are you there? no.\n");
+            verbose("(amb8465/3665) no response at %d bps.\n", baud);
             serial->close();
             return AccessCheck::NoProperResponse;
         }
@@ -1177,25 +1181,41 @@ AccessCheck detectAMB8465AMB3665(Detected *detected, shared_ptr<SerialCommunicat
     {
         // FF8A7A00780080710200000000FFFFFA00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF003200021400FFFFFFFFFF010004000000FFFFFF01440000000000000000FFFF0B040100FFFFFFFFFF00030000FFFFFFFFFFFFFF0000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF17
 
-        detected->setAsFound(config.dongleId(), BusDeviceType::DEVICE_AMB8465, 9600, false,
+        detected->setAsFound(config.dongleId(), BusDeviceType::DEVICE_AMB8465, baud, false,
                              detected->specified_device.linkmodes);
 
-        verbose("(amb8465) detect %s\n", config.str().c_str());
-        verbose("(amb8465) are you there? yes %s\n", config.dongleId().c_str());
+        verbose("(amb8465) detected %s at %d bps\n", config.dongleId().c_str(), baud);
     }
 
     if (ok_3665)
     {
         // FF8A8200800080710200000000FFFFFA00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0C3200021400FFFFFFFFFF010004000000FFFFFF01440000000000000000FFFF0B060100FFFFFFFFFF00020000FFFFFFFFFFFFFF0000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF18
 
-        detected->setAsFound(config.dongleId(), BusDeviceType::DEVICE_AMB3665, 9600, false,
+        detected->setAsFound(config.dongleId(), BusDeviceType::DEVICE_AMB3665, baud, false,
                              detected->specified_device.linkmodes);
 
-        verbose("(amb3665) detect %s\n", config.str().c_str());
-        verbose("(amb3665) are you there? yes %s\n", config.dongleId().c_str());
+        verbose("(amb3665) detected %s at %d bps\n", config.dongleId().c_str(), baud);
     }
 
     return AccessCheck::AccessOK;
+}
+
+AccessCheck detectAMB8465AMB3665(Detected *detected, shared_ptr<SerialCommunicationManager> manager)
+{
+    assert(detected->found_file != "");
+
+    for (int i = 0; detect_baudrate_ordered[i] != 0; i++)
+    {
+        verbose("(amb8465/3665) trying detection at %d bps...\n", detect_baudrate_ordered[i]);
+        AccessCheck ac = tryDetectAMB8465AMB3665AtBaud(detected, manager, detect_baudrate_ordered[i]);
+        if (ac == AccessCheck::AccessOK)
+        {
+            return AccessCheck::AccessOK;
+        }
+    }
+
+    verbose("(amb8465/3665) not detected at any baud rate\n");
+    return AccessCheck::NoProperResponse;
 }
 
 static AccessCheck tryFactoryResetAMB8465(string device, shared_ptr<SerialCommunicationManager> manager, int baud)
@@ -1258,7 +1278,7 @@ static AccessCheck tryFactoryResetAMB8465(string device, shared_ptr<SerialCommun
     return AccessCheck::AccessOK;
 }
 
-int bauds[] = { 1200, 2400, 4800, 9600, 19200, 38400, 56000, 115200, 0 };
+static int bauds[] = { 115200, 9600, 2400, 4800, 19200, 38400, 56000, 1200, 0 };
 
 AccessCheck factoryResetAMB8465(string device, shared_ptr<SerialCommunicationManager> manager, int *was_baud)
 {
