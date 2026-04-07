@@ -21,9 +21,9 @@
 
 #include<algorithm>
 #include<assert.h>
-#include<dirent.h>
 #include<errno.h>
-#include<fcntl.h>
+#include<filesystem>
+#include<fstream>
 #include<functional>
 #include<grp.h>
 #include<pwd.h>
@@ -723,55 +723,33 @@ bool checkCharacterDeviceExists(const char *tty, bool fail_if_not)
 
 bool checkFileExists(const char *file)
 {
-    struct stat info;
+    std::error_code ec;
+    bool result = std::filesystem::is_regular_file(file, ec);
+    if (!ec) return result;
 
-    int rc = stat(file, &info);
-    if (rc != 0) {
-        return false;
-    }
-    if (!S_ISREG(info.st_mode)) {
-        return false;
-    }
-    return true;
+    debug("Error checking if file exists: %s\n", ec.message().c_str());
+    return false;
 }
 
 bool checkIfSimulationFile(const char *file)
 {
-    if (!checkFileExists(file))
-    {
-        return false;
-    }
-    const char *filename = strrchr(file, '/');
-    if (filename) {
-        filename++;
-    } else {
-        filename = file;
-    }
-    if (filename < file) filename = file;
-    if (strncmp(filename, "simulation", 10)) {
-        return false;
-    }
-    return true;
+    if (!checkFileExists(file)) return false;
+    std::string name = std::filesystem::path(file).filename().string();
+    return startsWith(name, "simulation");
 }
 
 bool checkIfDirExists(const char *dir)
 {
-    struct stat info;
+    std::error_code ec;
+    std::filesystem::file_status st = std::filesystem::status(dir, ec);
+    if (ec) {
+        debug("Error checking if directory exists: %s\n", ec.message().c_str());
+        return false;
+    }
 
-    int rc = stat(dir, &info);
-    if (rc != 0) {
-        return false;
-    }
-    if (!S_ISDIR(info.st_mode)) {
-        return false;
-    }
-    if (info.st_mode & S_IWUSR &&
-        info.st_mode & S_IRUSR &&
-        info.st_mode & S_IXUSR) {
-        // Check the directory is writeable.
-        return true;
-    }
-    return false;
+    if (!std::filesystem::is_directory(st)) return false;
+    std::filesystem::perms perms = st.permissions();
+    return (perms & std::filesystem::perms::owner_all) == std::filesystem::perms::owner_all;
 }
 
 void debugPayload(const string& intro, vector<uchar> &payload)
@@ -958,62 +936,37 @@ bool crc16_CCITT_check(uchar *data, uint16_t length)
     uint16_t crc = ~crc16_CCITT(data, length);
     return crc == CRC16_GOOD_VALUE;
 }
+bool listFiles(const string& dir, vector<string> *files) {
+    if (!files) return false;
+    vector<string> result;
 
-bool listFiles(const string& dir, vector<string> *files)
-{
-    DIR *dp = NULL;
-    struct dirent *dptr = NULL;
+    std::error_code ec;
+    if (!std::filesystem::is_directory(dir, ec)) return false;
 
-    if (NULL == (dp = opendir(dir.c_str())))
-    {
-        return false;
+    std::filesystem::directory_iterator it(dir, ec);
+    if (ec) return false;
+
+    for (auto end = std::filesystem::directory_iterator(); it != end; it.increment(ec)) {
+        if (ec) return false;
+        string name = it->path().filename().string();
+        if (name.empty() || name.back() == '~') continue;
+        result.push_back(name);
     }
-    while(NULL != (dptr = ::readdir(dp)))
-    {
-        if (!strcmp(dptr->d_name,".") ||
-            !strcmp(dptr->d_name,".."))
-        {
-            // Ignore . ..  dirs.
-            continue;
-        }
-        size_t len = strlen(dptr->d_name);
-        if (len > 0 && dptr->d_name[len-1] == '~')
-        {
-            // Ignore emacs backup files ending in ~
-            continue;
-        }
-        files->push_back(string(dptr->d_name));
-    }
-    closedir(dp);
 
+    *files = std::move(result);
     return true;
 }
 
 int loadFile(const string& file, vector<string> *lines)
 {
-    char block[32768+1];
-    vector<uchar> buf;
-
-    int fd = open(file.c_str(), O_RDONLY);
-    if (fd == -1) {
+    std::ifstream ifs(file, std::ios::binary);
+    if (!ifs) return -1;
+    vector<uchar> buf((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
+    if (ifs.fail() && !ifs.eof())
+    {
+        error("Could not read file %s\n", file.c_str());
         return -1;
     }
-    while (true) {
-        ssize_t n = read(fd, block, sizeof(block));
-        if (n == -1) {
-            if (errno == EINTR) {
-                continue;
-            }
-            error("Could not read file %s errno=%d\n", file.c_str(), errno);
-            close(fd);
-            return -1;
-        }
-        buf.insert(buf.end(), block, block+n);
-        if (n < (ssize_t)sizeof(block)) {
-            break;
-        }
-    }
-    close(fd);
 
     bool eof, err;
     auto i = buf.begin();
@@ -1033,31 +986,64 @@ int loadFile(const string& file, vector<string> *lines)
 
 bool loadFile(const string& file, vector<char> *buf)
 {
-    int blocksize = 1024;
-    char block[blocksize];
-
-    int fd = open(file.c_str(), O_RDONLY);
-    if (fd == -1) {
-        warning("Could not open file %s errno=%d\n", file.c_str(), errno);
+    if (buf == nullptr)
+    {
+        warning("Invalid buffer parameter for file %s\n", file.c_str());
         return false;
     }
-    while (true) {
-        ssize_t n = read(fd, block, sizeof(block));
-        if (n == -1) {
-            if (errno == EINTR) {
-                continue;
-            }
-            warning("Could not read file %s errno=%d\n", file.c_str(), errno);
-            close(fd);
 
-            return false;
-        }
-        buf->insert(buf->end(), block, block+n);
-        if (n < (ssize_t)sizeof(block)) {
-            break;
-        }
+    std::ifstream ifs(file, std::ios::binary);
+    if (!ifs)
+    {
+        warning("Could not open file %s\n", file.c_str());
+        return false;
     }
-    close(fd);
+
+    ifs.seekg(0, std::ios::end);
+    if (!ifs)
+    {
+        warning("Could not seek in file %s\n", file.c_str());
+        return false;
+    }
+
+    std::streamsize size = ifs.tellg();
+    if (size < 0)
+    {
+        warning("Could not determine file size for %s\n", file.c_str());
+        return false;
+    }
+
+    if (size > static_cast<std::streamsize>(std::numeric_limits<size_t>::max()))
+    {
+        warning("File too large for address space %s\n", file.c_str());
+        return false;
+    }
+
+    ifs.seekg(0, std::ios::beg);
+    if (!ifs)
+    {
+        warning("Could not seek in file %s\n", file.c_str());
+        return false;
+    }
+
+    try
+    {
+        buf->resize(static_cast<size_t>(size));
+    }
+    catch (const std::bad_alloc&)
+    {
+        warning("Out of memory reading file %s\n", file.c_str());
+        return false;
+    }
+
+    ifs.read(buf->data(), size);
+    if (!ifs)
+    {
+        warning("Could not read file %s (read %zd of %zd bytes)\n", file.c_str(), (size_t)ifs.gcount(), (size_t)size);
+        buf->clear();
+        return false;
+    }
+
     return true;
 }
 
