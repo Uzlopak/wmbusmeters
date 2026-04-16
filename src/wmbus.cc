@@ -217,19 +217,12 @@ struct Manufacturer {
     }
 };
 
-vector<Manufacturer> manufacturers_;
+const vector<Manufacturer> manufacturers_ = {
+    #define X(key,code,name) Manufacturer(#key, code, name),
+    LIST_OF_MANUFACTURERS
+    #undef X
+};
 
-struct Initializer { Initializer(); };
-
-static Initializer initializser_;
-
-Initializer::Initializer() {
-
-#define X(key,code,name) manufacturers_.push_back(Manufacturer(#key,code,name));
-LIST_OF_MANUFACTURERS
-#undef X
-
-}
 
 void Telegram::addAddressMfctFirst(const vector<uchar>::iterator &pos)
 {
@@ -2950,6 +2943,8 @@ double vifScale(int vif)
     case 0x7d2d: return 60.0; // Duration since readout minutes
     case 0x7d2e: return 1.0; // Duration since readout hours
     case 0x7d2f: return (1.0/24.0); // Duration since readout days
+
+    case 0x7d3a: return 1.0; // Dimensionless
 
         /*
     case 0x78: // Fabrication no
