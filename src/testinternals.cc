@@ -301,6 +301,34 @@ void tst_subunit(unordered_map<string,pair<int,DVEntry>> &values, const char *ke
     }
 }
 
+void tst_date_meta(unordered_map<string,pair<int,DVEntry>> &values,
+                   const char *key,
+                   bool expected_ok,
+                   int expected_wday,
+                   int expected_isdst,
+                   int testnr)
+{
+    int offset;
+    struct tm value;
+    bool ok = extractDVdate(&values, key, &offset, &value);
+
+    if (ok != expected_ok) {
+        fprintf(stderr, "Error in dvparser testnr %d:\nexpected ok=%d but got ok=%d for key %s\n\n",
+                testnr, expected_ok, ok, key);
+        return;
+    }
+    if (!ok) return;
+
+    if (expected_wday >= 0 && value.tm_wday != expected_wday) {
+        fprintf(stderr, "Error in dvparser testnr %d:\nexpected wday=%d but got wday=%d for key %s\n\n",
+                testnr, expected_wday, value.tm_wday, key);
+    }
+    if (expected_isdst >= 0 && value.tm_isdst != expected_isdst) {
+        fprintf(stderr, "Error in dvparser testnr %d:\nexpected isdst=%d but got isdst=%d for key %s\n\n",
+                testnr, expected_isdst, value.tm_isdst, key);
+    }
+}
+
 void test_dvparser()
 {
     unordered_map<string,pair<int,DVEntry>> dv_entries;
@@ -440,6 +468,34 @@ void test_dvparser()
     tst_parse("0213E803 0D9313 04 12000500", &dv_entries, testnr);
     tst_double(dv_entries, "4213", 0.005, testnr);
     tst_subunit(dv_entries, "4213", 1, testnr);
+
+    // EN 13757-3:2018 Annex A, Table A.8 (Type I / CP48):
+    // day of week + daylight-saving/leap bits are encoded across the 6-byte datetime.
+    testnr++;
+    dv_entries.clear();
+    tst_parse("066D F7 6A 2D 11 36 99", &dv_entries, testnr);
+    tst_date(dv_entries, "066D", "2024-06-17 13:42:55", testnr);
+    tst_date_meta(dv_entries, "066D", true, 1, 1, testnr); // Monday, DST active.
+
+    // Same payload but with UI1[15]=1 (invalid time), extraction shall fail.
+    testnr++;
+    dv_entries.clear();
+    tst_parse("066D F7 EA 2D 11 36 99", &dv_entries, testnr);
+    tst_date_meta(dv_entries, "066D", false, -1, -1, testnr);
+
+    // CP48 wildcard/not-specified values are legal and should not fail extraction.
+    testnr++;
+    dv_entries.clear();
+    tst_parse("066D FF 7F 3F E0 F0 00", &dv_entries, testnr);
+    tst_date(dv_entries, "066D", "2000-01-01 00:00:00", testnr);
+    tst_date_meta(dv_entries, "066D", true, 1, 1, testnr);
+
+    // Leap flag mismatch should not be fatal (device quality issue, not parse failure).
+    testnr++;
+    dv_entries.clear();
+    tst_parse("066D 77 6A 2D 11 36 99", &dv_entries, testnr);
+    tst_date(dv_entries, "066D", "2024-06-17 13:42:55", testnr);
+    tst_date_meta(dv_entries, "066D", true, 1, 1, testnr);
 }
 
 void test_ixmlparser()
