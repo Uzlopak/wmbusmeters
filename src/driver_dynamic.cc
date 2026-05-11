@@ -35,6 +35,7 @@ void check_detection_triplets(DriverInfo *di, string file);
 string check_field_name(const char *name, DriverDynamic *dd);
 string check_field_ixml(const char *ixml, DriverDynamic *dd);
 bool check_field_match_entire_payload(const char *mep, DriverDynamic *dd);
+bool check_field_match_entire_frame(const char *mef, DriverDynamic *dd);
 string check_field_info(const char *info, DriverDynamic *dd);
 ReadableString check_field_readable_string(const char *rs_s, DriverDynamic *dd);
 Quantity check_field_quantity(const char *quantity_s, DriverDynamic *dd);
@@ -319,6 +320,16 @@ XMQProceed DriverDynamic::add_field(XMQDoc *doc, XMQNodePtr field, DriverDynamic
         match_entire_payload = false;
     }
 
+    // For ixml parsing using the full frame (including TPL header bytes like tpl_acc).
+    bool match_entire_frame = check_field_match_entire_frame(xmqGetStringRel(doc, "match_entire_frame", field), dd);
+
+    if (is_numeric && match_entire_frame)
+    {
+        warning("(driver) error in %s, match_entire_frame can only be enabled for quantity=String.\n",
+                dd->fileName().c_str());
+        match_entire_frame = false;
+    }
+
     // The vif scaling is by default Auto but can be overriden for pesky fields.
     VifScaling vif_scaling = check_vif_scaling(xmqGetStringRel(doc, "vif_scaling", field), dd);
 
@@ -423,6 +434,13 @@ XMQProceed DriverDynamic::add_field(XMQDoc *doc, XMQNodePtr field, DriverDynamic
         match_entire_payload = false;
     }
 
+    if (match.active && match_entire_frame)
+    {
+        warning("(driver) error in %s, match_entire_frame cannot be combined with match { }.\n",
+                dd->fileName().c_str());
+        match_entire_frame = false;
+    }
+
     if (use_tpl_aes_cbc_iv_payload_transform && !match_entire_payload)
     {
         warning("(driver) error in %s, transform_payload requires match_entire_payload = true.\n",
@@ -504,6 +522,10 @@ XMQProceed DriverDynamic::add_field(XMQDoc *doc, XMQNodePtr field, DriverDynamic
                 ixml,
                 match_entire_payload
                 );
+            if (match_entire_frame)
+            {
+                dd->lastAddedField()->matchEntireFrame(true);
+            }
             if (rs != ReadableString::Unknown)
             {
                 dd->lastAddedField()->setReadableString(rs);
@@ -822,6 +844,19 @@ bool check_field_match_entire_payload(const char *mep, DriverDynamic *dd)
 
     warning("(driver) error in %s, match_entire_payload must be true/false not \"%s\"\n",
             dd->fileName().c_str(), mep);
+
+    return false;
+}
+
+bool check_field_match_entire_frame(const char *mef, DriverDynamic *dd)
+{
+    if (!mef) return false;
+
+    if (!strcmp(mef, "true")) return true;
+    if (!strcmp(mef, "false")) return false;
+
+    warning("(driver) error in %s, match_entire_frame must be true/false not \"%s\"\n",
+            dd->fileName().c_str(), mef);
 
     return false;
 }
