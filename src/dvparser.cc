@@ -1286,6 +1286,13 @@ bool parseDV(Telegram *t,
         } else {
             strprintf(&key, "%s", dv.c_str());
         }
+        // A synthetic compact-profile expansion may have already claimed this key.
+        // Skip past any such collision, mirroring the dedup logic in addSyntheticCompactProfileEntries.
+        while (dv_entries->count(key) != 0) {
+            ++count;
+            strprintf(&key, "%s_%d", dv.c_str(), count);
+        }
+        dv_count[dv] = count;
         DEBUG_PARSER("(dvparser debug) DifVif key is %s\n", key.c_str());
 
         int remaining = std::distance(data, data_end);
