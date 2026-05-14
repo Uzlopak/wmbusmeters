@@ -124,29 +124,28 @@ jobs:
           echo "total_crashes=$TOTAL" >> $GITHUB_OUTPUT
           [ "$TOTAL" -gt 0 ] && echo "has_crashes=true" >> $GITHUB_OUTPUT || echo "has_crashes=false" >> $GITHUB_OUTPUT
 
+      - name: Zip crash artifacts
+        if: steps.check_crashes.outputs.has_crashes == 'true'
+        run: |
+          zip -r fuzz-crashes.zip fuzz_testcases/*/findings/default/crashes/
+
       - name: Upload crash artifacts
         if: steps.check_crashes.outputs.has_crashes == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: fuzz-crashes-${{ github.sha }}
-          path: |
-            fuzz_testcases/difvifparser/findings/default/crashes/
-            fuzz_testcases/formula/findings/default/crashes/
-            fuzz_testcases/frames/findings/default/crashes/
-            fuzz_testcases/address/findings/default/crashes/
-            fuzz_testcases/telegrams/findings/default/crashes/
+          path: fuzz-crashes.zip
           retention-days: 30
+
+      - name: Zip fuzz queues
+        run: |
+          zip -r fuzz-queues.zip fuzz_testcases/*/findings/default/queue/
 
       - name: Upload fuzz queues (corpus for future runs)
         uses: actions/upload-artifact@v4
         with:
           name: fuzz-queues-${{ github.sha }}
-          path: |
-            fuzz_testcases/difvifparser/findings/default/queue/
-            fuzz_testcases/formula/findings/default/queue/
-            fuzz_testcases/frames/findings/default/queue/
-            fuzz_testcases/address/findings/default/queue/
-            fuzz_testcases/telegrams/findings/default/queue/
+          path: fuzz-queues.zip
           retention-days: 7
 
       - name: Fail if crashes found
