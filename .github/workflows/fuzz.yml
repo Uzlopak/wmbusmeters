@@ -23,6 +23,7 @@ jobs:
       AFL_NO_UI: 1
       AFL_SKIP_CPUFREQ: 1
       AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES: 1
+      AFL_IGNORE_UNKNOWN_ENVVARS: 1
 
     steps:
       - uses: actions/checkout@v6
@@ -59,6 +60,9 @@ jobs:
 
       - name: Extract telegram seeds
         run: make extract_fuzz_telegram_seeds
+
+      - name: Configure core pattern for AFL++
+        run: echo core | sudo tee /proc/sys/kernel/core_pattern
 
       - name: Fuzz difvifparser (${{ env.FUZZ_DURATION }}s)
         run: |
