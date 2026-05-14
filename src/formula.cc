@@ -1567,6 +1567,13 @@ void FormulaImplementation::handleField(Token *field)
         debug("(formula) handle meter field %s into %s %s\n", field_name.c_str(), vname.c_str(),
               unitToStringLowerCase(named_unit).c_str());
 
+        if (meter_ == NULL)
+        {
+            errors_.push_back("No meter context available to resolve field \""+field_name+"\"\n"+field->withMarker(formula_));
+            valid_ = false;
+            return;
+        }
+
         Quantity q = toQuantity(named_unit);
         FieldInfo *f = meter_->findFieldInfo(vname, q);
 
