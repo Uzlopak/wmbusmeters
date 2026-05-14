@@ -134,7 +134,7 @@ jobs:
 
       - name: Upload crash artifacts
         if: steps.check_crashes.outputs.has_crashes == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fuzz-crashes-${{ github.sha }}
           path: fuzz-crashes.zip
@@ -145,7 +145,7 @@ jobs:
           zip -r fuzz-queues.zip fuzz_testcases/*/findings/default/queue/
 
       - name: Upload fuzz queues (corpus for future runs)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fuzz-queues-${{ github.sha }}
           path: fuzz-queues.zip
