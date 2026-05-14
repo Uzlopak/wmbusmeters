@@ -23,7 +23,6 @@ jobs:
       AFL_NO_UI: 1
       AFL_SKIP_CPUFREQ: 1
       AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES: 1
-      AFL_IGNORE_UNKNOWN_ENVVARS: 1
 
     steps:
       - uses: actions/checkout@v6
