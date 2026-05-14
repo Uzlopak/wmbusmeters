@@ -19,7 +19,6 @@
 #include"manufacturers.h"
 #include"util.h"
 
-#include<assert.h>
 #include<algorithm>
 #include<string.h>
 
@@ -276,7 +275,7 @@ bool AddressExpression::parse(const string &in)
     }
     vector<string> parts = splitString(s, '.');
 
-    assert(parts.size() > 0);
+    if (parts.size() == 0) return false;
 
     id = parts[0];
     if (!isValidMatchExpression(id, &has_wildcard))
