@@ -194,6 +194,18 @@ test {
     fields   = 'Vattur;0014a807;7177.666667;1111-11-11 11:11.11'
 }
 test {
+    args     = 'HCA3 apatoreitn40 00019915 NOKEY'
+    telegram = 40440106159901000908A00000A1009C019501240023002600000000000000000000000000000006002600070049000E0000006D008A00000000002D3006000000
+    json     = '{"_":"telegram","media":"heat cost allocation","meter":"apatoreitn40","name":"HCA3","id":"00019915","current_hca":109,"previous_hca":138,"current_date":"2024-01-13","season_start_date":"2000-05-01","temp_room_avg_c":25.75,"temp_room_prev_avg_c":25.3125,"seal_intact_counter":1,"timestamp":"1111-11-11T11:11:11Z"}'
+    fields   = 'HCA3;00019915;109;138;2024-01-13;2000-05-01;25.75;25.3125;1111-11-11 11:11.11'
+}
+test {
+    args     = 'HCA1 apatoreitn40 00019913 NOKEY'
+    telegram = 40440106139901000908A00000A10081016B013F00A2004E00000000000000000000000000000018001E0007007800100002002F01C700000000002D3006000000
+    json     = '{"_":"telegram","media":"heat cost allocation","meter":"apatoreitn40","name":"HCA1","id":"00019913","current_hca":303,"previous_hca":199,"current_date":"2024-01-13","season_start_date":"2000-05-01","temp_room_avg_c":24.0625,"temp_room_prev_avg_c":22.6875,"seal_intact_counter":1,"timestamp":"1111-11-11T11:11:11Z"}'
+    fields   = 'HCA1;00019913;303;199;2024-01-13;2000-05-01;24.0625;22.6875;1111-11-11 11:11.11'
+}
+test {
     args     = 'HCA3 apatoreitn 37373733 NOKEY'
     telegram = 29441486333737370408B60EFFFFF1460186EC1B934EE91BA57BA0A1000059009C250100322DE413B415
     json     = '{"_":"telegram","media":"heat cost allocation","meter":"apatoreitn","name":"HCA3","id":"37373733","current_hca":1,"previous_hca":89,"current_date":"2022-09-18","season_start_date":"2016-05-01","esb_date":"2018-12-28","status":"SEAL_BROKEN","temp_room_avg_c":21.703125,"temp_room_prev_avg_c":19.890625,"timestamp":"1111-11-11T11:11:11Z"}'

@@ -385,6 +385,12 @@ struct FieldInfo
         has_tpl_aes_ecb_double_payload_transform_ = true;
     }
     bool transformPayload(Telegram *t, std::vector<uchar> *content);
+    bool hasPayloadTransform() {
+        return has_tpl_aes_cbc_iv_payload_transform_ ||
+               has_tpl_aes_cbc_iv_header_repeated_payload_transform_ ||
+               has_tpl_aes_ecb_cbc_xor_payload_transform_ ||
+               has_tpl_aes_ecb_double_payload_transform_;
+    }
 
 private:
 

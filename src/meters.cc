@@ -1555,18 +1555,27 @@ void MeterCommonImplementation::processFieldIXMLs(Telegram *t)
                 // Special case for mfct specific meters not compliant with difvif parsing.
                 vector<uchar> content;
                 t->extractPayload(&content);
+                bool has_key = meterKeys() && meterKeys()->confidentiality_key.size() == 16;
                 if (!fi.transformPayload(t, &content))
                 {
-                    vector<uchar> frame;
-                    t->extractFrame(&frame);
-                    string hex = bin2hex(frame);
-
-                    warning("(meters) meter: %s failed to transform entire payload for ixml field: %s\n"
-                            "Please open an issue at https://github.com/wmbusmeters/wmbusmeters/\n"
-                            "and report this telegram: %s\n",
-                            name().c_str(),
-                            fi.vname().c_str(),
-                            hex.c_str());
+                    if (!has_key && fi.hasPayloadTransform())
+                    {
+                        // No key configured — decryption was not expected to succeed.
+                        verbose("(meters) meter: %s skipping transform for ixml field %s (no key)\n",
+                                name().c_str(), fi.vname().c_str());
+                    }
+                    else
+                    {
+                        vector<uchar> frame;
+                        t->extractFrame(&frame);
+                        string hex = bin2hex(frame);
+                        warning("(meters) meter: %s failed to transform entire payload for ixml field: %s\n"
+                                "Please open an issue at https://github.com/wmbusmeters/wmbusmeters/\n"
+                                "and report this telegram: %s\n",
+                                name().c_str(),
+                                fi.vname().c_str(),
+                                hex.c_str());
+                    }
                     continue;
                 }
                 string value = bin2hex(content);

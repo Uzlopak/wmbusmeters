@@ -1,0 +1,474 @@
+// Copyright (C) 2026 Fredrik Öhrström (gpl-3.0-or-later)
+driver {
+    name           = apatoreitn40
+    meter_type     = HeatCostAllocationMeter
+    default_fields = name,id,current_hca,previous_hca,current_date,season_start_date,temp_room_avg_c,temp_room_prev_avg_c,timestamp
+    manufacturer   = Apator
+    detect {
+        mvt = APA,08,08
+        mvt = APA,09,08
+        mvt = APA,0D,08
+    }
+    fields {
+        field {
+            name           = seals_cond_raw
+            quantity       = Dimensionless
+            attributes     = HIDE
+            vif_scaling    = None
+            dif_signedness = Unsigned
+            match {
+                difvifkey = 01FB40
+            }
+        }
+        field {
+            name           = season_start_date_raw
+            quantity       = Dimensionless
+            attributes     = HIDE
+            vif_scaling    = None
+            dif_signedness = Unsigned
+            match {
+                difvifkey = 02FB42
+            }
+        }
+        field {
+            name           = temp_actual_raw
+            quantity       = Dimensionless
+            attributes     = HIDE
+            vif_scaling    = None
+            dif_signedness = Unsigned
+            match {
+                difvifkey = 02FB43
+            }
+        }
+        field {
+            name           = temp_last_raw
+            quantity       = Dimensionless
+            attributes     = HIDE
+            vif_scaling    = None
+            dif_signedness = Unsigned
+            match {
+                difvifkey = 02FB44
+            }
+        }
+        field {
+            name           = curr_month
+            quantity       = HCA
+            attributes     = HIDE
+            vif_scaling    = None
+            dif_signedness = Unsigned
+            info           = 'HCA for current month in billing season.'
+            match {
+                difvifkey = 02FB45
+            }
+        }
+        field {
+            name           = m01
+            quantity       = HCA
+            attributes     = HIDE
+            vif_scaling    = None
+            dif_signedness = Unsigned
+            info           = 'HCA month 1 back in billing season.'
+            match {
+                difvifkey = 02FB46
+            }
+        }
+        field {
+            name           = m02
+            quantity       = HCA
+            attributes     = HIDE
+            vif_scaling    = None
+            dif_signedness = Unsigned
+            info           = 'HCA month 2 back in billing season.'
+            match {
+                difvifkey = 02FB47
+            }
+        }
+        field {
+            name           = m03
+            quantity       = HCA
+            attributes     = HIDE
+            vif_scaling    = None
+            dif_signedness = Unsigned
+            info           = 'HCA month 3 back in billing season.'
+            match {
+                difvifkey = 02FB48
+            }
+        }
+        field {
+            name           = m04
+            quantity       = HCA
+            attributes     = HIDE
+            vif_scaling    = None
+            dif_signedness = Unsigned
+            info           = 'HCA month 4 back in billing season.'
+            match {
+                difvifkey = 02FB49
+            }
+        }
+        field {
+            name           = m05
+            quantity       = HCA
+            attributes     = HIDE
+            vif_scaling    = None
+            dif_signedness = Unsigned
+            info           = 'HCA month 5 back in billing season.'
+            match {
+                difvifkey = 02FB4A
+            }
+        }
+        field {
+            name           = m06
+            quantity       = HCA
+            attributes     = HIDE
+            vif_scaling    = None
+            dif_signedness = Unsigned
+            info           = 'HCA month 6 back in billing season.'
+            match {
+                difvifkey = 02FB4B
+            }
+        }
+        field {
+            name           = m07
+            quantity       = HCA
+            attributes     = HIDE
+            vif_scaling    = None
+            dif_signedness = Unsigned
+            info           = 'HCA month 7 back in billing season.'
+            match {
+                difvifkey = 02FB4C
+            }
+        }
+        field {
+            name           = m08
+            quantity       = HCA
+            attributes     = HIDE
+            vif_scaling    = None
+            dif_signedness = Unsigned
+            info           = 'HCA month 8 back in billing season.'
+            match {
+                difvifkey = 02FB4D
+            }
+        }
+        field {
+            name           = m09
+            quantity       = HCA
+            attributes     = HIDE
+            vif_scaling    = None
+            dif_signedness = Unsigned
+            info           = 'HCA month 9 back in billing season.'
+            match {
+                difvifkey = 02FB4E
+            }
+        }
+        field {
+            name           = m10
+            quantity       = HCA
+            attributes     = HIDE
+            vif_scaling    = None
+            dif_signedness = Unsigned
+            info           = 'HCA month 10 back in billing season.'
+            match {
+                difvifkey = 02FB4F
+            }
+        }
+        field {
+            name           = m11
+            quantity       = HCA
+            attributes     = HIDE
+            vif_scaling    = None
+            dif_signedness = Unsigned
+            info           = 'HCA month 11 back in billing season.'
+            match {
+                difvifkey = 02FB50
+            }
+        }
+        field {
+            name           = m12
+            quantity       = HCA
+            attributes     = HIDE
+            vif_scaling    = None
+            dif_signedness = Unsigned
+            info           = 'HCA month 12 back in billing season.'
+            match {
+                difvifkey = 02FB51
+            }
+        }
+        field {
+            name           = m13
+            quantity       = HCA
+            attributes     = HIDE
+            vif_scaling    = None
+            dif_signedness = Unsigned
+            info           = 'HCA month 13 back in billing season.'
+            match {
+                difvifkey = 02FB52
+            }
+        }
+        field {
+            name           = m14
+            quantity       = HCA
+            attributes     = HIDE
+            vif_scaling    = None
+            dif_signedness = Unsigned
+            info           = 'HCA month 14 back in billing season.'
+            match {
+                difvifkey = 02FB53
+            }
+        }
+        field {
+            name           = m15
+            quantity       = HCA
+            attributes     = HIDE
+            vif_scaling    = None
+            dif_signedness = Unsigned
+            info           = 'HCA month 15 back in billing season.'
+            match {
+                difvifkey = 02FB54
+            }
+        }
+        field {
+            name     = current
+            quantity = HCA
+            info     = 'Energy consumption in current billing year.'
+            match {
+                difvifkey = 026E
+            }
+        }
+        field {
+            name     = previous
+            quantity = HCA
+            info     = 'Energy consumption in previous billing year.'
+            match {
+                difvifkey = 426E
+            }
+        }
+        field {
+            name           = prev_year2
+            quantity       = HCA
+            attributes     = HIDE
+            vif_scaling    = None
+            dif_signedness = Unsigned
+            info           = 'Energy consumption two billing years ago.'
+            match {
+                difvifkey = 02FB55
+            }
+        }
+        field {
+            name           = prev_year3
+            quantity       = HCA
+            attributes     = HIDE
+            vif_scaling    = None
+            dif_signedness = Unsigned
+            info           = 'Energy consumption three billing years ago.'
+            match {
+                difvifkey = 02FB56
+            }
+        }
+        field {
+            name           = device_date_raw
+            quantity       = Dimensionless
+            attributes     = HIDE
+            vif_scaling    = None
+            dif_signedness = Unsigned
+            match {
+                difvifkey = 02FB57
+            }
+        }
+        field {
+            name       = season_start_day
+            quantity   = Dimensionless
+            attributes = HIDE
+            calculate  = 'season_start_date_raw_counter & 31counter'
+        }
+        field {
+            name       = season_start_month
+            quantity   = Dimensionless
+            attributes = HIDE
+            calculate  = '(season_start_date_raw_counter >> 5counter) & 15counter'
+        }
+        field {
+            name       = device_day
+            quantity   = Dimensionless
+            attributes = HIDE
+            calculate  = 'device_date_raw_counter & 31counter'
+        }
+        field {
+            name       = device_month
+            quantity   = Dimensionless
+            attributes = HIDE
+            calculate  = '(device_date_raw_counter >> 5counter) & 15counter'
+        }
+        field {
+            name       = device_year
+            quantity   = Dimensionless
+            attributes = HIDE
+            calculate  = '(device_date_raw_counter >> 9counter) & 63counter'
+        }
+        field {
+            name      = temp_room_avg
+            quantity  = Temperature
+            info      = 'Average room temperature in current billing year (uint16 LE / 16).'
+            calculate = '(temp_actual_raw_counter / 16counter) * 1c'
+        }
+        field {
+            name      = temp_room_prev_avg
+            quantity  = Temperature
+            info      = 'Average room temperature in previous billing year (uint16 LE / 16).'
+            calculate = '(temp_last_raw_counter / 16counter) * 1c'
+        }
+        field {
+            name         = current
+            quantity     = PointInTime
+            display_unit = date
+            info         = 'Current date as reported by meter.'
+            calculate    = "'2000-01-01 02:00:00' +
+                            (((device_year_counter * 12counter) + device_month_counter - 1counter) * 1month) +
+                            ((device_day_counter - 1counter) * 24h)"
+        }
+        field {
+            name         = season_start
+            quantity     = PointInTime
+            display_unit = date
+            // ShortDate encodes only day and month; year defaults to 2000.
+            info      = 'Billing season start date (day and month only; year not encoded).'
+            calculate = "'2000-01-01 02:00:00' +
+                         ((season_start_month_counter - 1counter) * 1month) +
+                         ((season_start_day_counter - 1counter) * 24h)"
+        }
+        field {
+            name      = seal_intact
+            quantity  = Dimensionless
+            info      = 'Seal condition: 1 = intact (seals_cond==0), 0 = broken.'
+            calculate = '(1counter - (seals_cond_raw_counter & 1counter))'
+        }
+        field {
+            name                 = mfct_data
+            quantity             = Text
+            attributes           = HIDE
+            match_entire_payload = true
+            ixml                 = "decode = frame_eitn9.
+                                    frame_eitn9 = SealsCond, ExtSensor, SeasonStart,
+                                                  TempActual, TempLast,
+                                                  CurrMonthHCA,
+                                                  Month01, Month02, Month03, Month04, Month05,
+                                                  Month06, Month07, Month08, Month09, Month10,
+                                                  Month11, Month12, Month13, Month14, Month15,
+                                                  CurrYearHCA, PrevYear1, PrevYear2, PrevYear3,
+                                                  DeviceDate, NumOfDay, Error1, Error2, Error3.
+                                    SealsCond    = byte, @DV_seals_cond.
+                                    ExtSensor    = byte.
+                                    SeasonStart  = word, @DV_season_start.
+                                    TempActual   = word, @DV_temp_actual.
+                                    TempLast     = word, @DV_temp_last.
+                                    CurrMonthHCA = word, @DV_curr_month.
+                                    Month01 = word, @DV_month01. Month02 = word, @DV_month02.
+                                    Month03 = word, @DV_month03. Month04 = word, @DV_month04.
+                                    Month05 = word, @DV_month05. Month06 = word, @DV_month06.
+                                    Month07 = word, @DV_month07. Month08 = word, @DV_month08.
+                                    Month09 = word, @DV_month09. Month10 = word, @DV_month10.
+                                    Month11 = word, @DV_month11. Month12 = word, @DV_month12.
+                                    Month13 = word, @DV_month13. Month14 = word, @DV_month14.
+                                    Month15 = word, @DV_month15.
+                                    CurrYearHCA = word, @DV_curr_year_hca.
+                                    PrevYear1   = word, @DV_prev_year1.
+                                    PrevYear2   = word, @DV_prev_year2.
+                                    PrevYear3   = word, @DV_prev_year3.
+                                    DeviceDate  = word, @DV_device_date.
+                                    NumOfDay    = byte.
+                                    Error1      = byte. Error2 = byte. Error3 = byte.
+                                    -hex  = ['A'-'F';'0'-'9'].
+                                    -byte = hex, hex.
+                                    -word = byte, byte.
+                                    DV_seals_cond>dvk   = +'01FB40'.
+                                    DV_season_start>dvk = +'02FB42'.
+                                    DV_temp_actual>dvk  = +'02FB43'.
+                                    DV_temp_last>dvk    = +'02FB44'.
+                                    DV_curr_month>dvk   = +'02FB45'.
+                                    DV_month01>dvk = +'02FB46'. DV_month02>dvk = +'02FB47'.
+                                    DV_month03>dvk = +'02FB48'. DV_month04>dvk = +'02FB49'.
+                                    DV_month05>dvk = +'02FB4A'. DV_month06>dvk = +'02FB4B'.
+                                    DV_month07>dvk = +'02FB4C'. DV_month08>dvk = +'02FB4D'.
+                                    DV_month09>dvk = +'02FB4E'. DV_month10>dvk = +'02FB4F'.
+                                    DV_month11>dvk = +'02FB50'. DV_month12>dvk = +'02FB51'.
+                                    DV_month13>dvk = +'02FB52'. DV_month14>dvk = +'02FB53'.
+                                    DV_month15>dvk = +'02FB54'.
+                                    DV_curr_year_hca>dvk = +'026E'.
+                                    DV_prev_year1>dvk    = +'426E'.
+                                    DV_prev_year2>dvk    = +'02FB55'.
+                                    DV_prev_year3>dvk    = +'02FB56'.
+                                    DV_device_date>dvk   = +'02FB57'."
+        }
+        field {
+            name                 = mfct_data_encrypted
+            quantity             = Text
+            attributes           = HIDE
+            match_entire_payload = true
+            transform_payload    = tpl_aes_cbc_iv_header_repeated
+            ixml                 = "decode = frame_eitn9.
+                                    frame_eitn9 = SealsCond, ExtSensor, SeasonStart,
+                                                  TempActual, TempLast,
+                                                  CurrMonthHCA,
+                                                  Month01, Month02, Month03, Month04, Month05,
+                                                  Month06, Month07, Month08, Month09, Month10,
+                                                  Month11, Month12, Month13, Month14, Month15,
+                                                  CurrYearHCA, PrevYear1, PrevYear2, PrevYear3,
+                                                  DeviceDate, NumOfDay, Error1, Error2, Error3.
+                                    SealsCond    = byte, @DV_seals_cond.
+                                    ExtSensor    = byte.
+                                    SeasonStart  = word, @DV_season_start.
+                                    TempActual   = word, @DV_temp_actual.
+                                    TempLast     = word, @DV_temp_last.
+                                    CurrMonthHCA = word, @DV_curr_month.
+                                    Month01 = word, @DV_month01. Month02 = word, @DV_month02.
+                                    Month03 = word, @DV_month03. Month04 = word, @DV_month04.
+                                    Month05 = word, @DV_month05. Month06 = word, @DV_month06.
+                                    Month07 = word, @DV_month07. Month08 = word, @DV_month08.
+                                    Month09 = word, @DV_month09. Month10 = word, @DV_month10.
+                                    Month11 = word, @DV_month11. Month12 = word, @DV_month12.
+                                    Month13 = word, @DV_month13. Month14 = word, @DV_month14.
+                                    Month15 = word, @DV_month15.
+                                    CurrYearHCA = word, @DV_curr_year_hca.
+                                    PrevYear1   = word, @DV_prev_year1.
+                                    PrevYear2   = word, @DV_prev_year2.
+                                    PrevYear3   = word, @DV_prev_year3.
+                                    DeviceDate  = word, @DV_device_date.
+                                    NumOfDay    = byte.
+                                    Error1      = byte. Error2 = byte. Error3 = byte.
+                                    -hex  = ['A'-'F';'0'-'9'].
+                                    -byte = hex, hex.
+                                    -word = byte, byte.
+                                    DV_seals_cond>dvk   = +'01FB40'.
+                                    DV_season_start>dvk = +'02FB42'.
+                                    DV_temp_actual>dvk  = +'02FB43'.
+                                    DV_temp_last>dvk    = +'02FB44'.
+                                    DV_curr_month>dvk   = +'02FB45'.
+                                    DV_month01>dvk = +'02FB46'. DV_month02>dvk = +'02FB47'.
+                                    DV_month03>dvk = +'02FB48'. DV_month04>dvk = +'02FB49'.
+                                    DV_month05>dvk = +'02FB4A'. DV_month06>dvk = +'02FB4B'.
+                                    DV_month07>dvk = +'02FB4C'. DV_month08>dvk = +'02FB4D'.
+                                    DV_month09>dvk = +'02FB4E'. DV_month10>dvk = +'02FB4F'.
+                                    DV_month11>dvk = +'02FB50'. DV_month12>dvk = +'02FB51'.
+                                    DV_month13>dvk = +'02FB52'. DV_month14>dvk = +'02FB53'.
+                                    DV_month15>dvk = +'02FB54'.
+                                    DV_curr_year_hca>dvk = +'026E'.
+                                    DV_prev_year1>dvk    = +'426E'.
+                                    DV_prev_year2>dvk    = +'02FB55'.
+                                    DV_prev_year3>dvk    = +'02FB56'.
+                                    DV_device_date>dvk   = +'02FB57'."
+        }
+    }
+    tests {
+        test {
+            args     = 'HCA1 apatoreitn40 00019913 NOKEY'
+            telegram = 40440106139901000908A00000A10081016B013F00A2004E00000000000000000000000000000018001E0007007800100002002F01C700000000002D3006000000
+            json     = '{"_":"telegram","media":"heat cost allocation","meter":"apatoreitn40","name":"HCA1","id":"00019913","current_hca":303,"previous_hca":199,"current_date":"2024-01-13","season_start_date":"2000-05-01","temp_room_avg_c":24.0625,"temp_room_prev_avg_c":22.6875,"seal_intact_counter":1,"timestamp":"1111-11-11T11:11:11Z"}'
+            fields   = 'HCA1;00019913;303;199;2024-01-13;2000-05-01;24.0625;22.6875;1111-11-11 11:11.11'
+        }
+        test {
+            args     = 'HCA3 apatoreitn40 00019915 NOKEY'
+            telegram = 40440106159901000908A00000A1009C019501240023002600000000000000000000000000000006002600070049000E0000006D008A00000000002D3006000000
+            json     = '{"_":"telegram","media":"heat cost allocation","meter":"apatoreitn40","name":"HCA3","id":"00019915","current_hca":109,"previous_hca":138,"current_date":"2024-01-13","season_start_date":"2000-05-01","temp_room_avg_c":25.75,"temp_room_prev_avg_c":25.3125,"seal_intact_counter":1,"timestamp":"1111-11-11T11:11:11Z"}'
+            fields   = 'HCA3;00019915;109;138;2024-01-13;2000-05-01;25.75;25.3125;1111-11-11 11:11.11'
+        }
+    }
+}
