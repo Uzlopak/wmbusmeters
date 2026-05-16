@@ -4208,6 +4208,15 @@ bool Telegram::findFormatBytesFromKnownMeterSignatures(vector<uchar> *format_byt
         hex2bin("426C441301FD17840113C40113840213C40213840313C40313840413C40413840513C40513840613C40613840713C40713840813046D0413", format_bytes);
         debug("(wmbus) using hard coded format for hash 052d\n");
     }
+    else if (format_signature == 0xa9f3)
+    {
+        // Kamstrup flowIQ2200 / flowIQ2100 compact frame
+        // Fields: status(04FF23), total_m3(0413), target_m3(4413), target_date(426C),
+        //         flow(023B), max_flow(92013B), min_flow(A2013B), mfct(06FF1B),
+        //         min_flow_temp(A1015B), max_flow_temp(91015B), min_ext_temp_day(A10167)
+        hex2bin("04FF2304134413426C023B92013BA2013B06FF1BA1015B91015BA10167", format_bytes);
+        debug("(wmbus) using hard coded format for hash a9f3 (displayed as f3a9)\n");
+    }
     else
     {
         ok = false;
