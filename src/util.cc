@@ -27,8 +27,6 @@
 #include<errno.h>
 #include<fcntl.h>
 #include<functional>
-#include<grp.h>
-#include<pwd.h>
 #include<math.h>
 #include<set>
 #include<signal.h>
@@ -896,73 +894,6 @@ void addYears(struct tm *date, int y)
     return addMonths(date, 12*y);
 }
 
-const char* toString(AccessCheck ac)
-{
-    switch (ac)
-    {
-    case AccessCheck::NoSuchDevice: return "NoSuchDevice";
-    case AccessCheck::NoProperResponse: return "NoProperResponse";
-    case AccessCheck::NoPermission: return "NoPermission";
-    case AccessCheck::NotSameGroup: return "NotSameGroup";
-    case AccessCheck::AccessOK: return "AccessOK";
-    }
-    return "?";
-}
-
-AccessCheck checkIfExistsAndHasAccess(const string& device)
-{
-    struct stat device_sb;
-
-    int ok = stat(device.c_str(), &device_sb);
-
-    // The file did not exist.
-    if (ok) return AccessCheck::NoSuchDevice;
-
-    int r = access(device.c_str(), R_OK);
-    int w = access(device.c_str(), W_OK);
-    if (r == 0 && w == 0)
-    {
-        // We have read and write access!
-        return AccessCheck::AccessOK;
-    }
-
-    // We are not permitted to read and write to this tty. Why?
-    // Lets check the group settings.
-
-#if defined(__APPLE__) && defined(__MACH__)
-        int my_groups[256];
-#else
-        gid_t my_groups[256];
-#endif
-    int ngroups = 256;
-
-    struct passwd *p = getpwuid(getuid());
-
-    // What are the groups I am member of?
-    int rc = getgrouplist(p->pw_name, p->pw_gid, my_groups, &ngroups);
-    if (rc < 0) {
-        error(EXIT_PERMISSION_ERROR, "(wmbusmeters) cannot handle users with more than 256 groups\n");
-    }
-
-    // What is the group of the tty?
-    struct group *device_group = getgrgid(device_sb.st_gid);
-
-    // Go through my groups to see if the device's group is in there.
-    for (int i=0; i<ngroups; ++i)
-    {
-        if (my_groups[i] == device_group->gr_gid)
-        {
-            // We belong to the same group as the tty. Typically dialout.
-            // Then there is some other reason for the lack of access.
-            return AccessCheck::NoPermission;
-        }
-    }
-    // We have examined all the groups that we belong to and yet not
-    // found the device's group. We can at least conclude that we
-    // being in the device's group would help, ie dialout.
-    return AccessCheck::NotSameGroup;
-}
-
 int countSetBits(int v)
 {
     int n = 0;
@@ -1261,11 +1192,6 @@ bool isInsideTimePeriod(time_t now, string periods)
         if (is_inside(&nowt, &tp)) return true;
     }
     return false;
-}
-
-size_t memoryUsage()
-{
-    return 0;
 }
 
 vector<string> alarm_shells_;
@@ -1954,32 +1880,6 @@ bool is_lowercase_alpha_num_underscore(const char *text)
 bool endsWith(const std::string& str, const std::string& suffix)
 {
     return str.size() >= suffix.size() && 0 == str.compare(str.size()-suffix.size(), suffix.size(), suffix);
-}
-
-string lang_;
-
-const std::string &language()
-{
-    if (lang_.length() > 0) return lang_;
-
-    const char *la = getenv("LANG");
-    if (!la || strlen(la) < 2)
-    {
-        lang_ = "en";
-    }
-    else
-    {
-        if (la[2] == '_' || la[2] == 0)
-        {
-            lang_ = string(la, la+2);
-        }
-        else
-        {
-            lang_ = "en";
-        }
-    }
-
-    return lang_;
 }
 
 TestBit toTestBit(const char *s)

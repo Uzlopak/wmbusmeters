@@ -186,15 +186,7 @@ void eatWhitespace(std::vector<char> &v, std::vector<char>::iterator &i, bool *e
 std::string eatToSkipWhitespace(std::vector<char> &v, std::vector<char>::iterator &i, int c, size_t max, bool *eof, bool *err);
 // Remove leading and trailing white space
 void trimWhitespace(std::string *s);
-// Returns AccessOK if device exists and is accessible.
-// NotSameGroup means that there is no permission and the groups do not match.
-// NoPermission means some other reason for no access. (missing rw etc)
-// Locked means that some other process has locked the tty.
-// NoSuchDevice means the tty does not exist.
-// NoProperResponse means that we talked to something, but we do not know what it is.
-enum class AccessCheck { NoSuchDevice, NoProperResponse, NoPermission, NotSameGroup, AccessOK };
-const char* toString(AccessCheck ac);
-AccessCheck checkIfExistsAndHasAccess(const std::string& device);
+
 // Count the number of 1:s in the binary number v.
 int countSetBits(int v);
 
@@ -217,9 +209,6 @@ std::string currentMicros();
 bool hasBytes(int n, std::vector<uchar>::iterator &pos, std::vector<uchar> &frame);
 
 bool startsWith(const std::string& s, std::vector<uchar> &data);
-
-// Sum the memory used by the heap and stack.
-size_t memoryUsage();
 
 std::string humanReadableTwoDecimals(size_t s);
 
@@ -275,9 +264,6 @@ int strlen_utf8(const char *s);
 int toMfctCode(char a, char b, char c);
 
 bool is_lowercase_alpha_num_underscore(const char *text);
-
-// The language that the user expects driver and other messages in.
-const std::string &language();
 
 TestBit toTestBit(const char *s);
 
