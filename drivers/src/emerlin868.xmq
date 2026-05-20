@@ -41,12 +41,41 @@ driver {
                 storage_nr       = 1
             }
         }
+        field {
+            name       = status
+            quantity   = Text
+            info       = 'Meter status from standard-conformant error flags and tpl status field.'
+            attributes = STATUS,INCLUDE_TPL_STATUS
+            match {
+                measurement_type = Instantaneous
+                vif_range        = ErrorFlags
+                add_combinable   = StandardConformantDataContent
+            }
+            lookup {
+                name            = ERROR_FLAGS
+                map_type        = BitToString
+                mask_bits       = 0xffffffff
+                default_message = OK
+            }
+        }
+        field {
+            name           = remaining_battery_life
+            quantity       = Time
+            info           = 'Remaining battery life in months.'
+            vif_scaling    = Auto
+            dif_signedness = Signed
+            display_unit   = month
+            match {
+                measurement_type = Instantaneous
+                vif_range        = RemainingBatteryLifetimeMonths
+            }
+        }
     }
     tests {
         test {
             args     = 'Vodda emerlin868 95949392 NOKEY'
             telegram = 2E4492159293949511377ABE0020252F2F_04135515000004FD971D80800000441300000000426C000002FDFD02B300
-            json     = '{"_":"telegram","media":"radio converter (meter side)","meter":"emerlin868","name":"Vodda","id":"95949392","total_m3":5.461,"target_m3":0,"target_date":"2000-00-00","timestamp":"1111-11-11T11:11:11Z"}'
+            json     = '{"_":"telegram","media":"radio converter (meter side)","meter":"emerlin868","name":"Vodda","id":"95949392","remaining_battery_life_month":179,"status":"ERROR_FLAGS_8080","target_m3":0,"total_m3":5.461,"target_date":"2000-00-00","timestamp":"1111-11-11T11:11:11Z"}'
             fields   = 'Vodda;95949392;5.461;0;1111-11-11 11:11.11'
         }
     }

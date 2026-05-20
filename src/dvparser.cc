@@ -1244,13 +1244,29 @@ bool parseDV(Telegram *t,
 
             if (extension_vif)
             {
-                // First vife after the extension marker is the real vif.
-                full_vif |= (vife & 0x7f);
-                extension_vif = false;
-                if (data_has_difvifs)
+                int next_vif = vife & 0x7f;
+
+                // EN 13757-3:2018 Table 13 uses FD FD xx for a second-level extension.
+                // Keep collecting bytes until the actual terminal VIFE arrives.
+                if (full_vif == 0x7d00 && next_vif == 0x7d)
                 {
-                    t->addExplanationAndIncrementPos(*format, 1, KindOfData::PROTOCOL, Understanding::FULL,
-                                                     "%02X vife (%s)", vife, vifeType(dif, vif, vife).c_str());
+                    full_vif = ((full_vif | next_vif) << 8);
+                    if (data_has_difvifs)
+                    {
+                        t->addExplanationAndIncrementPos(*format, 1, KindOfData::PROTOCOL, Understanding::FULL,
+                                                         "%02X vife (2nd level FD extension)", vife);
+                    }
+                }
+                else
+                {
+                    // First terminal vife after the extension marker is the real vif.
+                    full_vif |= next_vif;
+                    extension_vif = false;
+                    if (data_has_difvifs)
+                    {
+                        t->addExplanationAndIncrementPos(*format, 1, KindOfData::PROTOCOL, Understanding::FULL,
+                                                         "%02X vife (%s)", vife, vifeType(dif, vif, vife).c_str());
+                    }
                 }
             }
             else
@@ -1650,25 +1666,42 @@ void extractDV(string &s, uchar *dif, int *vif, bool *has_difes, bool *has_vifes
         return;
     }
 
-    *vif = bytes[i];
-    if (*vif == 0xfb || // first extension
-        *vif == 0xfd || // second extensio
-        *vif == 0xef || // third extension
-        *vif == 0xff)   // vendor extension
+    uchar vif_byte = bytes[i];
+    int full_vif = vif_byte & 0x7f;
+    bool extension_vif = false;
+
+    if (vif_byte == 0xfb || // first extension
+        vif_byte == 0xfd || // second extension
+        vif_byte == 0xef || // third extension
+        vif_byte == 0xff)   // vendor extension
     {
-        if (i+1 < bytes.size())
-        {
-            // Create an extended vif, like 0xfd31 for example.
-            *vif = bytes[i] << 8 | bytes[i+1];
-            i++;
-        }
+        full_vif <<= 8;
+        extension_vif = true;
     }
 
     while (i < bytes.size() && (bytes[i] & 0x80))
     {
         i++;
         *has_vifes = true;
+
+        if (i >= bytes.size()) break;
+
+        if (extension_vif)
+        {
+            int next_vif = bytes[i] & 0x7f;
+            if (full_vif == 0x7d00 && next_vif == 0x7d)
+            {
+                full_vif = ((full_vif | next_vif) << 8);
+            }
+            else
+            {
+                full_vif |= next_vif;
+                extension_vif = false;
+            }
+        }
     }
+
+    *vif = full_vif;
 }
 
 bool extractDVuint8(unordered_map<string,pair<int,DVEntry>> *dv_entries,
