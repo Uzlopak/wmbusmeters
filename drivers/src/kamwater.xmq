@@ -24,14 +24,18 @@ driver {
         difvif = 02FF2004134413615B6167
         difvif = 02FF20041392013BA1015B8101E7FF0F
         difvif = 04FF234413523B06FF1B426C61675167023B04138101E7FF0F
+        // Same layout with AcousticNoiseLastDay (FF1C) replacing min external temp daily (8101E7FF0F)
+        difvif = 04FF234413523B06FF1B426C61675167023B041306FF1C
+        // Same layout with AcousticNoiseNonFiltered (FF1D) replacing min external temp daily
+        difvif = 04FF234413523B06FF1B426C61675167023B041306FF1D
+        // Same layout with both FF1C and FF1D replacing min external temp daily
+        difvif = 04FF234413523B06FF1B426C61675167023B041306FF1C06FF1D
         // Unknown if KamHeat or KamWater
         difvif = 02FF2004134413A1015B8101E7FF0F
         difvif = 02FF2004134413615B5167
         difvif = 02FF2004134413
         difvif = 02FF200413523B
-        // Kamstrup KWM2231
-        difvif = 04FF2304134413426C023B92013BA2013B06FF1BA1015B91015BA10167
-        // Kamstrup flowIQ2200 / flowIQ2100 compact frame
+        // Kamstrup KWM2231 / flowIQ2200 / flowIQ2100 compact frame
         difvif = 04FF2304134413426C023B92013BA2013B06FF1BA1015B91015BA10167
     }
     library {
@@ -341,6 +345,57 @@ driver {
             }
         }
         field {
+            // 04FF24: info registers for warm/hot water environment (32-bit).
+            // Bit definitions are TBD — pending Kamstrup document FILE100000169.
+            name       = status_warm_env
+            quantity   = Text
+            info       = 'Info registers for warm/hot water environment (32-bit).'
+            attributes = INJECT_INTO_STATUS,HIDE
+            match {
+                difvifkey = 04FF24
+            }
+            lookup {
+                name            = ERROR_FLAGS
+                map_type        = BitToString
+                mask_bits       = 0xffffffff
+                default_message = OK
+            }
+        }
+        field {
+            // 02FF25: info registers for fixed networks (16-bit, no time info).
+            // Bit definitions are TBD — pending Kamstrup document FILE100000169.
+            name       = status_fixed_net
+            quantity   = Text
+            info       = 'Info registers for fixed networks (16-bit, no time info).'
+            attributes = INJECT_INTO_STATUS,HIDE
+            match {
+                difvifkey = 02FF25
+            }
+            lookup {
+                name            = ERROR_FLAGS
+                map_type        = BitToString
+                mask_bits       = 0xffff
+                default_message = OK
+            }
+        }
+        field {
+            // 12FF25: info registers for fixed networks with logged info codes
+            // (16-bit Maximum function). Bit definitions TBD — pending Kamstrup document FILE100000169.
+            name       = status_fixed_net_logged
+            quantity   = Text
+            info       = 'Info registers for fixed networks with logged info codes (16-bit, Maximum function).'
+            attributes = INJECT_INTO_STATUS,HIDE
+            match {
+                difvifkey = 12FF25
+            }
+            lookup {
+                name            = ERROR_FLAGS
+                map_type        = BitToString
+                mask_bits       = 0xffff
+                default_message = OK
+            }
+        }
+        field {
             name     = flow
             quantity = Flow
             info     = 'The current flow of water through the meter.'
@@ -380,9 +435,28 @@ driver {
             }
         }
         field {
+            // Non-compact telegrams encode min_external_temperature_last_day with Kamstrup-specific VIFE (E7 FF 0F instead of 67).
+            name     = min_external_temperature_last_day
+            quantity = Temperature
+            info     = 'The lowest external temperature outside of the meter during the last day.'
+            match {
+                difvifkey = 8101E7FF0F
+            }
+        }
+        field {
+            name     = max_flow_last_month
+            quantity = Flow
+            info     = 'The maximum flow recorded during the last month.'
+            match {
+                measurement_type = Maximum
+                vif_range        = VolumeFlow
+                storage_nr       = 1
+            }
+        }
+        field {
             name     = max_flow
             quantity = Flow
-            info     = 'The maximum flow recorded during previous period.'
+            info     = 'The maximum flow recorded during the last day.'
             match {
                 measurement_type = Maximum
                 vif_range        = VolumeFlow
@@ -427,6 +501,50 @@ driver {
                 measurement_type = Minimum
                 vif_range        = VolumeFlow
                 storage_nr       = 2
+            }
+        }
+        field {
+            name           = acoustic_noise
+            quantity       = Dimensionless
+            info           = 'Acoustic noise level (Kamstrup internal diagnostic).'
+            vif_scaling    = None
+            dif_signedness = Unsigned
+            display_unit   = counter
+            match {
+                difvifkey = 06FF1B
+            }
+        }
+        field {
+            name           = acoustic_noise_last_day
+            quantity       = Dimensionless
+            info           = 'Acoustic noise level accumulated over the last day.'
+            vif_scaling    = None
+            dif_signedness = Unsigned
+            display_unit   = counter
+            match {
+                difvifkey = 06FF1C
+            }
+        }
+        field {
+            name           = acoustic_noise_non_filtered
+            quantity       = Dimensionless
+            info           = 'Raw unfiltered acoustic noise level (Kamstrup internal diagnostic).'
+            vif_scaling    = None
+            dif_signedness = Unsigned
+            display_unit   = counter
+            match {
+                difvifkey = 06FF1D
+            }
+        }
+        field {
+            name         = remaining_battery_life
+            quantity     = Time
+            info         = 'Remaining battery life time.'
+            display_unit = d
+            vif_scaling  = None
+            match {
+                measurement_type = Instantaneous
+                vif_range        = RemainingBattery
             }
         }
         field {
@@ -646,49 +764,49 @@ driver {
         test {
             args     = 'MyTapWater multical21 76348799 NOKEY'
             telegram = 2A442D2C998734761B168D2091D37CAC21576C78_02FF207100041308190000441308190000615B7F616713
-            json     = '{"_":"telegram","media":"cold water","meter":"kamwater","name":"MyTapWater","id":"76348799","min_external_temperature_last_month_c":19,"flow_temperature_c":127,"target_m3":6.408,"total_m3":6.408,"current_status":"DRY","status":"DRY","time_bursting":"","time_dry":"22-31 days","time_leaking":"","time_reversed":"","timestamp":"1111-11-11T11:11:11Z"}'
-            fields   = 'MyTapWater;76348799;DRY;6.408;6.408;1111-11-11 11:11.11'
+            json     = '{"_":"telegram","media":"cold water","meter":"kamwater","name":"MyTapWater","id":"76348799","min_external_temperature_last_month_c":19,"flow_temperature_c":127,"target_m3":6.408,"total_m3":6.408,"current_status":"DRY LOW_BATTERY TAMBIENT_LOW TAMPER","status":"DRY LOW_BATTERY TAMBIENT_LOW TAMPER","time_bursting":"","time_dry":"22-31 days","time_leaking":"","time_reversed":"","timestamp":"1111-11-11T11:11:11Z"}'
+            fields   = 'MyTapWater;76348799;DRY LOW_BATTERY TAMBIENT_LOW TAMPER;6.408;6.408;1111-11-11 11:11.11'
         }
         test {
             args     = 'MyTapWater multical21 76348799 NOKEY'
             telegram = 23442D2C998734761B168D2087D19EAD217F1779EDA86AB6_710008190000081900007F13
-            json     = '{"_":"telegram","media":"cold water","meter":"kamwater","name":"MyTapWater","id":"76348799","min_external_temperature_last_month_c":19,"flow_temperature_c":127,"target_m3":6.408,"total_m3":6.408,"current_status":"DRY","status":"DRY","time_bursting":"","time_dry":"22-31 days","time_leaking":"","time_reversed":"","timestamp":"1111-11-11T11:11:11Z"}'
-            fields   = 'MyTapWater;76348799;DRY;6.408;6.408;1111-11-11 11:11.11'
+            json     = '{"_":"telegram","media":"cold water","meter":"kamwater","name":"MyTapWater","id":"76348799","min_external_temperature_last_month_c":19,"flow_temperature_c":127,"target_m3":6.408,"total_m3":6.408,"current_status":"DRY LOW_BATTERY TAMBIENT_LOW TAMPER","status":"DRY LOW_BATTERY TAMBIENT_LOW TAMPER","time_bursting":"","time_dry":"22-31 days","time_leaking":"","time_reversed":"","timestamp":"1111-11-11T11:11:11Z"}'
+            fields   = 'MyTapWater;76348799;DRY LOW_BATTERY TAMBIENT_LOW TAMPER;6.408;6.408;1111-11-11 11:11.11'
         }
         test {
             args     = 'Vadden multical21 44556677 NOKEY'
             telegram = 2D442D2C776655441B168D2083B48D3A20_46887802FF20000004132F4E000092013B3D01A1015B028101E7FF0F03
-            json     = '{"_":"telegram","media":"cold water","meter":"kamwater","name":"Vadden","id":"44556677","flow_temperature_c":2,"max_flow_m3h":0.317,"min_flow_temperature_c":2,"total_m3":20.015,"current_status":"","status":"OK","time_bursting":"","time_dry":"","time_leaking":"","time_reversed":"","timestamp":"1111-11-11T11:11:11Z"}'
+            json     = '{"_":"telegram","media":"cold water","meter":"kamwater","name":"Vadden","id":"44556677","flow_temperature_c":2,"max_flow_m3h":0.317,"min_external_temperature_last_day_c":3,"min_flow_temperature_c":2,"total_m3":20.015,"current_status":"OK","status":"OK","time_bursting":"","time_dry":"","time_leaking":"","time_reversed":"","timestamp":"1111-11-11T11:11:11Z"}'
             fields   = 'Vadden;44556677;OK;20.015;null;1111-11-11 11:11.11'
         }
         test {
             args     = 'Vadden multical21 44556677 NOKEY'
             telegram = 21442D2C776655441B168D2079CC8C3A20_F4307912C40DFF00002F4E00003D010203
-            json     = '{"_":"telegram","media":"cold water","meter":"kamwater","name":"Vadden","id":"44556677","flow_temperature_c":2,"max_flow_m3h":0.317,"min_flow_temperature_c":2,"total_m3":20.015,"current_status":"","status":"OK","time_bursting":"","time_dry":"","time_leaking":"","time_reversed":"","timestamp":"1111-11-11T11:11:11Z"}'
+            json     = '{"_":"telegram","media":"cold water","meter":"kamwater","name":"Vadden","id":"44556677","flow_temperature_c":2,"max_flow_m3h":0.317,"min_external_temperature_last_day_c":3,"min_flow_temperature_c":2,"total_m3":20.015,"current_status":"OK","status":"OK","time_bursting":"","time_dry":"","time_leaking":"","time_reversed":"","timestamp":"1111-11-11T11:11:11Z"}'
             fields   = 'Vadden;44556677;OK;20.015;null;1111-11-11 11:11.11'
         }
         test {
             args     = 'VATTEN flowiq2200 52525252 NOKEY'
             telegram = 4D44372C525252523A168D203894DF7920F93278_04FF23000000000413AEAC0000441364A80000426C812A023B000092013BEF01A2013B000006FF1B067000097000A1015B0C91015B14A1016713
-            json     = '{"_":"telegram","media":"cold water","meter":"kamwater","name":"VATTEN","id":"52525252","flow_m3h":0,"flow_temperature_c":12,"max_flow_m3h":0.495,"max_flow_temperature_c":20,"min_external_temperature_last_day_c":19,"min_flow_m3h":0,"min_flow_temperature_c":12,"target_m3":43.108,"target_date":"2020-10-01","total_m3":44.206,"status":"OK","timestamp":"1111-11-11T11:11:11Z"}'
+            json     = '{"_":"telegram","media":"cold water","meter":"kamwater","name":"VATTEN","id":"52525252","acoustic_noise_counter":481187360774,"flow_m3h":0,"flow_temperature_c":12,"max_flow_m3h":0.495,"max_flow_temperature_c":20,"min_external_temperature_last_day_c":19,"min_flow_m3h":0,"min_flow_temperature_c":12,"target_m3":43.108,"target_date":"2020-10-01","total_m3":44.206,"status":"OK","timestamp":"1111-11-11T11:11:11Z"}'
             fields   = 'VATTEN;52525252;OK;44.206;43.108;1111-11-11 11:11.11'
         }
         test {
             args     = 'Votten flowiq2200 23813076 NOKEY'
             telegram = 4744372C763081233C168D2056D1ED11205A3C78_04FF2300080000441300000000523B000006FF1B08900008F0FF426CC12B61670A51671B023B000004131F0F00008101E7FF0F13
-            json     = '{"_":"telegram","media":"cold water","meter":"kamwater","name":"Votten","id":"23813076","flow_m3h":0,"max_external_temperature_c":27,"target_m3":0,"target_date":"2022-11-01","total_m3":3.871,"min_external_temperature_last_month_c":10,"status":"NO_CONSUMPTION","timestamp":"1111-11-11T11:11:11Z"}'
+            json     = '{"_":"telegram","media":"cold water","meter":"kamwater","name":"Votten","id":"23813076","acoustic_noise_counter":281406391488520,"flow_m3h":0,"max_external_temperature_c":27,"max_flow_last_month_m3h":0,"min_external_temperature_last_day_c":19,"min_external_temperature_last_month_c":10,"target_m3":0,"target_date":"2022-11-01","total_m3":3.871,"status":"NO_CONSUMPTION","timestamp":"1111-11-11T11:11:11Z"}'
             fields   = 'Votten;23813076;NO_CONSUMPTION;3.871;0;1111-11-11 11:11.11'
         }
         test {
             args     = 'Votten flowiq2200 23813076 NOKEY'
             telegram = 3244372C763081233C168D2057D2ED11205a817905095480_0008000000000000000008900008F0FFC12B0A1B23001F0F000013
-            json     = '{"_":"telegram","media":"cold water","meter":"kamwater","name":"Votten","id":"23813076","min_external_temperature_last_month_c":10,"flow_m3h":0.035,"max_external_temperature_c":27,"target_m3":0,"target_date":"2022-11-01","total_m3":3.871,"status":"NO_CONSUMPTION","timestamp":"1111-11-11T11:11:11Z"}'
+            json     = '{"_":"telegram","media":"cold water","meter":"kamwater","name":"Votten","id":"23813076","acoustic_noise_counter":281406391488520,"flow_m3h":0.035,"max_external_temperature_c":27,"max_flow_last_month_m3h":0,"min_external_temperature_last_day_c":19,"min_external_temperature_last_month_c":10,"target_m3":0,"target_date":"2022-11-01","total_m3":3.871,"status":"NO_CONSUMPTION","timestamp":"1111-11-11T11:11:11Z"}'
             fields   = 'Votten;23813076;NO_CONSUMPTION;3.871;0;1111-11-11 11:11.11'
         }
         test {
             args     = 'VottenCompact flowiq2200 23347419 A7FA5B81935AEC8F9A8AA266861E1336'
             telegram = 3444372c197434233c168d20B39cf9a921c816f87B86d91ed5371B979e3a111B703e7f9757f69f890B281958f43e7f184B33a4f0f7
-            json     = '{"_":"telegram","media":"cold water","meter":"kamwater","name":"VottenCompact","id":"23347419","flow_m3h":0,"flow_temperature_c":8,"max_flow_m3h":0.604,"max_flow_temperature_c":19,"min_external_temperature_last_day_c":15,"min_flow_m3h":0,"min_flow_temperature_c":8,"target_m3":192.25,"target_date":"2026-05-01","total_m3":194.924,"status":"ERROR_FLAGS_100000","timestamp":"1111-11-11T11:11:11Z"}'
+            json     = '{"_":"telegram","media":"cold water","meter":"kamwater","name":"VottenCompact","id":"23347419","acoustic_noise_counter":412417548294,"flow_m3h":0,"flow_temperature_c":8,"max_flow_m3h":0.604,"max_flow_temperature_c":19,"min_external_temperature_last_day_c":15,"min_flow_m3h":0,"min_flow_temperature_c":8,"target_m3":192.25,"target_date":"2026-05-01","total_m3":194.924,"status":"ERROR_FLAGS_100000","timestamp":"1111-11-11T11:11:11Z"}'
             fields   = 'VottenCompact;23347419;ERROR_FLAGS_100000;194.924;192.25;1111-11-11 11:11.11'
         }
     }
