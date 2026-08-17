@@ -1146,6 +1146,13 @@ test {
     fields   = 'KadenD10;23800604;TAMPERING;0;1111-11-11 11:11.11'
 }
 test {
+    args     = 'MyWater kadenwater 12345678 9F5213BC13841410BB1410141515E4D5'
+    comment  = 'Same water meter under the ECM manufacturer code (ECM,01,07) instead of KDN,01,07 or VIP,01,07'
+    telegram = 7e446d147856341201077a0d007005c927ee43f1102ba4944b43501e2368a0f18a01c1b0d0ef02e69b4451a208ee5be8c419577228b50d39ef0ac642349b2e91b01ec233116fb7fb643e83d78dc039296bf261f23600d9a68ada548aac1945ac8f9f7fbe3b7db1c37d3c35dc34bc97bcb9586d5f292c8d53e20c0d2ccf2dde
+    json     = '{"_":"telegram","media":"water","meter":"kadenwater","name":"MyWater","id":"12345678","actuality_duration_s":0,"duration_b_s":0,"max_flow_m3h":2.594,"total_m3":727.7096,"volume_b_m3":0.0047,"volume_flow_m3h":0,"fabrication_no":"0000000000000","meter_datetime":"2026-08-05 14:12","status":"OK","timestamp":"1111-11-11T11:11:11Z"}'
+    fields   = 'MyWater;12345678;OK;727.7096;1111-11-11 11:11.11'
+}
+test {
     comment  = 'Water-leak alarm: TPL status byte set to 0x63 (synthetic, from the VIP 94.6123 m3 telegram) = leak with flow both below and above the 100 l/h limit'
     args     = 'MyWater kadenwater 19221000 82B0551191F51D66EFCDAB8967452301'
     telegram = 4e4430590010221901077a71634005f8c0d59e1536f306ffcd58075fda84b6f21fc0f33df92c8cf5fcab599bd1fe73b0db2e5d9e6d8a2e3363d67db2cdaf16c26d57886b70ee0f77fc116753809bb5
